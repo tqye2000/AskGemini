@@ -1,0 +1,118 @@
+credentials:
+  usernames:
+    yayuan181:
+      email: tqye2006@gmail.com
+      name: Ye
+      password: '$2b$12$ORlpcV9sfiPhCEQcBTojUeQCvXPQpVpXk47ijvXPGsMsxGU6tDpQm' # To be replaced with hashed password
+    juanjuan:
+      email: jj2006@gmail.com
+      name: JuanJuan
+      password: '$2b$12$ORlpcV9sfiPhCEQcBTojUeQCvXPQpVpXk47ijvXPGsMsxGU6tDpQm' 
+    chunlan:
+      email: chun@gmail.com
+      name: Chunlan
+      password: '$2b$12$ORlpcV9sfiPhCEQcBTojUeQCvXPQpVpXk47ijvXPGsMsxGU6tDpQm'
+    shangbin:
+      email: shangb@gmail.com
+      name: Shangbin
+      password: '$2b$12$ORlpcV9sfiPhCEQcBTojUeQCvXPQpVpXk47ijvXPGsMsxGU6tDpQm' 
+    fangfang:
+      email: ff2006@gmail.com
+      name: FangFang
+      password: '$2b$12$YfNLyHKOcFsm1cC2JvQbhO42OZQraYlRqyDVN9aEizKnMXjTYOHJO' 
+    lilei:
+      email: lilei@gmail.com
+      name: Lei Lei
+      password: '$2b$12$AkvU3TKkg3NZP8oy6oDpYujI7vhq9g7FtpwNiwxyvXGvRU4Z5jqM6' 
+    lanlan:
+      email: lanlan@gmail.com
+      name: Lan Lan
+      password: '$2b$12$GFtqGLDVAad5TL.7YmF7AuWDV.03NtaiZ4TTOZt6hMcXou3qZFp6q' 
+    suntong:
+      email: sunton@gmail.com
+      name: Sun Tong
+      password: '$2b$12$NB7mfx9fASDKgoDjZOpRFOsWjrUwDv4VYt2amJwKCtSTdELoF72Ei' 
+    youjie:
+      email: jj2006@gmail.com
+      name: You Jie
+      password: '$2b$12$NB7mfx9fASDKgoDjZOpRFOsWjrUwDv4VYt2amJwKCtSTdELoF72Ei' 
+    helen:
+      email: jj2006@gmail.com
+      name: Helen
+      password: '$2b$12$jIDUrgxX/1GaU/ZDqrcaeu42GjRYxPeRMKcSkLULZMLaXDqBwtrDG' 
+    wendyzhao:
+      email: wendyzgmail.com
+      name: Wendy
+      password: '$2b$12$.lisg.7guVsdoNNkj3rTle9l6Q7mGN1T/k2XwL1IyizFnU/kpZl6u' #
+    wenli2000:
+      email: wenli@gmail.com
+      name: Wen Li
+      password: '$2b$12$R9O1rmsQF6k0irntAOQvded/FfSgGKKjde1h7/1URoal6wetNazJ2' # 
+    xianglaoshi:
+      email: xianglaoshi@gmail.com
+      name: Teacher Xiang
+      password: '$2b$12$R9O1rmsQF6k0irntAOQvded/FfSgGKKjde1h7/1URoal6wetNazJ2' # 
+    linbo:
+      email: 1422680590@qq.com
+      name: Lin Bo
+      password: '$2b$12$ZYukPllL6llrbCKmdS2A2.MFI1GB2SDkZV43aj9.MEqcNkD5.x5fe' # 
+    xiaolan:
+      email: deng@gmail.com
+      name: Xiao Lan
+      password: '$2b$12$toqZ.HV4GPY/UUHbKXQTKOlvtHF16pqqNbEz5uFr9aKVqfAV8FhHu' # 
+    zhangxy:
+      email: zhangxy@gmail.com
+      name: Xiao Yuan
+      password: '$2b$12$okCBcQT2SusFvjyUo1HQzei8624hTNSvM0C4Cd9pxfv3m0Z8Flsdq' # 
+    evawu123:
+      email: evawu@gmail.com
+      name: Wu Eva
+      password: '$2b$12$uarGdibKca1FtwC0wPMgB.SrKokblwfqhbCrU1MrBlvahYe3cNtjm' # 
+    wanghui:
+      email: wanghh@gmail.com
+      name: Wang Hui
+      password: '$2b$12$sg106nbXOF9Ntx4vgNRsh.RgwYFji4tFhDvKg5TRgPOCnNCPCUdwu' #
+    zhangxuan:
+      email: zhangx@gmail.com
+      name: Xuan
+      password: '$2b$12$wVDSNcUiL0xOzS9YnH8R9.NyXGkGkkRvfBYbKRo5vXgRF3Qt7QVJm' # 
+    pengyou1:
+      email: wanghh@gmail.com
+      name: Friend
+      password: '$2b$12$rYKOFgbmKTdblcCQ9nSrceGp52Bi8Jn.E1.7.XIlGviiKaN6j8cM.' # 
+    pengyou:
+      email: wanghh@gmail.com
+      name: Guest2
+      password: '$2b$12$rYKOFgbmKTdblcCQ9nSrceGp52Bi8Jn.E1.7.XIlGviiKaN6j8cM.' # 
+    wangjiajia:
+      email: wanghh@gmail.com
+      name: Jia Jia
+      password: '$2b$12$rYKOFgbmKTdblcCQ9nSrceGp52Bi8Jn.E1.7.XIlGviiKaN6j8cM.' # 
+    yezheng:
+      email: yezheng@gmail.com
+      name: Ye Zheng
+      password: '$2b$12$l1ESeUMc7fhErWqWgTvF9OqS76HUtp8hqd75Xp3gn3UFMmVhGCHRy' # 
+    xululu:
+      email: luluxu@gmail.com
+      name: LuLu
+      password: '$2b$12$l1ESeUMc7fhErWqWgTvF9OqS76HUtp8hqd75Xp3gn3UFMmVhGCHRy' # 
+    mrdeng:
+      email: mrdeng@gmail.com
+      name: Mr Deng
+      password: '$2b$12$rYKOFgbmKTdblcCQ9nSrceGp52Bi8Jn.E1.7.XIlGviiKaN6j8cM.' # 
+    likai:
+      email: likai@gmail.com
+      name: LK Huang
+      password: '$2b$12$/fiTW7Wsgczt5uJk9Cnf0OkK3HtWR/vICprnCX.CdYn1SoNP5wOEu' # 
+    guest1:
+      email: wanghh@gmail.com
+      name: Guest1
+      password: '$2b$12$vE37IqNyAjhC5WoqGq/oV.0WMCEFfCm6KI3B2mT4NLs5qh4f3tmoO' # 
+cookie:
+  expiry_days: 30
+  key: 'random_signature_key' # Must be string
+  name: gpt4Echo
+preauthorized:
+  emails:
+  - tqye2006@gmail.com
+  

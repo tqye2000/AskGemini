@@ -1,2 +1,3 @@
 # AskGemini
-Interface to Gemini models
+
+An echo camber of Gemini Model

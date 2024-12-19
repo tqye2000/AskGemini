@@ -1,0 +1,4 @@
+[server]
+enableStaticServing = false
+enableXsrfProtection = false
+enableCORS = false

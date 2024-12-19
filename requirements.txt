@@ -1,0 +1,12 @@
+google-generativeai
+google-genai
+streamlit
+streamlit_authenticator
+st-multimodal-chatinput
+streamlit_javascript
+langdetect
+langchain_community
+pypdf
+unstructured
+python-docx
+gtts
