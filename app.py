@@ -10,6 +10,7 @@ from streamlit import runtime
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit_javascript import st_javascript
 import streamlit_authenticator as stauth
+import requests
 
 import os
 import sys
@@ -223,6 +224,7 @@ MAX_MESSAGES = 20
 current_user = "**new_chat**"
 
 BASE_PROMPT = "You are a helpful assistant who can answer or handle all my queries!"
+TOTAL_TRIALS = 15
 
 # system messages and/or context
 set_context_all = {"不预设（通用）": ""}
@@ -352,18 +354,6 @@ def role_change_callback(arg):
     else:
         st.session_state.sys_prompt = BASE_PROMPT
 
-
-#@st.cache_resource
-#def get_sd_model_pipe(model_name):
-#    use_gpu = torch.cuda.is_available()
-#    if use_gpu:
-#        pipe = StableDiffusionPipeline.from_pretrained(model_name, torch_dtype=torch.float16)
-#        pipe = pipe.to("cuda")
-#    else:
-#        pipe = StableDiffusionPipeline.from_pretrained(model_name)
-#        pipe = pipe.to("cpu")
-
-#    return pipe
 
 @st.cache_data()
 def get_app_folder():
@@ -495,6 +485,12 @@ def Login() -> str:
     
     try:
         authenticator.login(location='main', fields=fields)
+        # authenticator.experimental_guest_login('Login with Google',
+        #                                     provider='google',
+        #                                     oauth2=config['oauth2'])
+        # authenticator.experimental_guest_login('Login with Microsoft',
+        #                                     provider='microsoft',
+        #                                     oauth2=config['oauth2'])
 
         # Authenticating user
         if st.session_state['authentication_status']:
@@ -652,13 +648,18 @@ def Model_Completion(parts: list):
     return ret_content, tokens
 
 @st.cache_data()
-def Create_Model(model_id: str, sys_prompt: str = BASE_PROMPT):
+def Create_Model(model_id: str, sys_prompt: str = BASE_PROMPT, temperature: float = 0.7):
+    '''
+    '''
 
     print(f"Create Model: {model_id}")
     print(f"System Prompt: {sys_prompt}")
 #    model = genai.GenerativeModel("gemini-1.5-flash")
     model = genai.GenerativeModel(model_id, 
                                   system_instruction=sys_prompt,
+                                  generation_config=genai.types.GenerationConfig(
+                                    temperature=temperature,
+                                  )
     )
 
     return model
@@ -676,13 +677,13 @@ def main(argv):
 
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 flash", "Gemini 1.5 Pro", "Gemini 1.5 flash",),on_change=Model_Changed)
     if st.session_state.model_version == "Gemini 1.5 Pro":
-        st.session_state.llm = Create_Model("gemini-1.5-pro-latest", st.session_state.sys_prompt)
+        st.session_state.llm = Create_Model("gemini-1.5-pro-latest", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 1.5 flash":
-        st.session_state.llm = Create_Model("gemini-1.5-flash", st.session_state.sys_prompt)
+        st.session_state.llm = Create_Model("gemini-1.5-flash", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 flash":
-        st.session_state.llm = Create_Model("gemini-2.0-flash-exp", st.session_state.sys_prompt)
+        st.session_state.llm = Create_Model("gemini-2.0-flash-exp", st.session_state.sys_prompt, st.session_state.temperature)
     else:
-        st.session_state.llm = Create_Model("gemini-1.5-pro", st.session_state.sys_prompt)
+        st.session_state.llm = Create_Model("gemini-1.5-pro", st.session_state.sys_prompt, st.session_state.temperature)
 
     st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
     st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label[0], min_value=0.1, max_value=2.0, value=0.7, step=0.05)
@@ -759,8 +760,8 @@ def main(argv):
             #with c2:
             #    st.session_state.clear_doc_button = st.button(label=st.session_state.locale.clear_doc_btn[0], key="clearDoc", on_click=Delete_Files)
 
-        user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder[0], value=st.session_state.user_text, max_chars=6000, key="1")
-        send_button = st.button(st.session_state.locale.chat_run_btn[0])
+        user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder[0], value=st.session_state.user_text, max_chars=8000, key="1")
+        send_button = st.button(st.session_state.locale.chat_run_btn[0], disabled=st.session_state.total_queries > TOTAL_TRIALS)
         if send_button :
             parts = []
             print(f"{st.session_state.user}: {user_input}")
@@ -813,13 +814,12 @@ def main(argv):
                     #print(st.session_state.messages)
                     with st.spinner('Wait ...'):
                         answer, tokens = Model_Completion(parts)
+                        st.session_state.total_queries += 1
+                        st.session_state.total_tokens += tokens
 
                     generated_text = answer + '\n'
                     st.session_state["messages"] += [{"role": "model", "parts": generated_text}]
 
-				    # counting the number of messages
-                    st.session_state.message_count += 1
-                    st.session_state.total_tokens += tokens
 
                     with chats_placeholder:
                         Show_Messages()
@@ -842,6 +842,9 @@ def main(argv):
             """, unsafe_allow_html=True)
         st.markdown(f'<p class="tiny-font">{small_print}</p>', unsafe_allow_html=True)
 
+        if st.session_state.total_queries > TOTAL_TRIALS:
+            st.warning("# 你已经超过了今天的试用额度。请稍后再试！或联系管理员 tqye@yahoo.com 申请一个账号。")
+
 ##############################
 if __name__ == "__main__":
 
@@ -857,7 +860,13 @@ if __name__ == "__main__":
 
     if "user_ip" not in st.session_state:
         st.session_state.user_ip = get_client_ip()
-    
+
+    if "user_id" not in st.session_state:
+        try:
+            st.session_state.user_id = get_geolocation(st.session_state.user_ip)["city"]
+        except:
+            st.session_state.user_id = get_geolocation(st.session_state.user_ip)
+
     if "user_loacation" not in st.session_state:
         st.session_state.user_location = None
 
@@ -865,13 +874,10 @@ if __name__ == "__main__":
         st.session_state['locale'] = zw
 
     if "model_version" not in st.session_state:
-        st.session_state.model_version = "Gemini 1.5 Pro"
+        st.session_state.model_version = "Gemini 2.0 flash"
 
     if "temperature" not in st.session_state:
         st.session_state.temperature = 0.7
-
-    if "message_count" not in st.session_state:
-        st.session_state.message_count = 0
 
     if "loaded_content" not in st.session_state:
         st.session_state.loaded_content = ""
@@ -906,6 +912,9 @@ if __name__ == "__main__":
     if "sys_prompt" not in st.session_state:
         st.session_state.sys_prompt = BASE_PROMPT
 
+    if 'total_queries' not in st.session_state:
+        st.session_state.total_queries = 0
+
     #if (txt2img_enabled == True):
     #    pipe = get_sd_model_pipe(model_id)
     
@@ -929,22 +938,25 @@ if __name__ == "__main__":
             unsafe_allow_html=True,
     )
 
-    #st.button(st.session_state.locale.new_reg_btn[0], on_click=New_User)
-    
-    st.session_state.user, st.session_state.authentication_status, st.session_state.user_id = Login()
-    if st.session_state.user != None and st.session_state.user != "" and st.session_state.user != "invalid":
-        current_user = st.session_state.user_id
+    ##---------- Disable Login For Now ------------
+    # st.session_state.user, st.session_state.authentication_status, st.session_state.user_id = Login()
+    # if st.session_state.user != None and st.session_state.user != "" and st.session_state.user != "invalid":
+    #     current_user = st.session_state.user_id
 
-        if "context_select" + current_user + "value" not in st.session_state:
-            st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
+    #     if "context_select" + current_user + "value" not in st.session_state:
+    #         st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
 
-        if "context_input" + current_user + "value" not in st.session_state:
-            st.session_state["context_input" + current_user + "value"] = ""
+    #     if "context_input" + current_user + "value" not in st.session_state:
+    #         st.session_state["context_input" + current_user + "value"] = ""
 
-        main(sys.argv)
-    # else:
-        # print(f"user: {st.session_state.user}")
-        # print(f"auth_status: {st.session_state.authentication_status}")
+    #     main(sys.argv)
+    #----------------------------------------------
 
+    if "context_select" + current_user + "value" not in st.session_state:
+        st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
+    if "context_input" + current_user + "value" not in st.session_state:
+        st.session_state["context_input" + current_user + "value"] = ""
+
+    main(sys.argv)
 
     
