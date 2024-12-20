@@ -675,13 +675,15 @@ def main(argv):
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
 
-    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 flash", "Gemini 1.5 Pro", "Gemini 1.5 flash",),on_change=Model_Changed)
+    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 flash", "Gemini 1.5 Pro", "Gemini 2.0 think", "Gemini 1.5 flash",),on_change=Model_Changed)
     if st.session_state.model_version == "Gemini 1.5 Pro":
         st.session_state.llm = Create_Model("gemini-1.5-pro-latest", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 1.5 flash":
         st.session_state.llm = Create_Model("gemini-1.5-flash", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 flash":
         st.session_state.llm = Create_Model("gemini-2.0-flash-exp", st.session_state.sys_prompt, st.session_state.temperature)
+    elif st.session_state.model_version == "Gemini 2.0 flash think":
+        st.session_state.llm = Create_Model("gemini-2.0-flash-thinking-exp", st.session_state.sys_prompt, st.session_state.temperature)
     else:
         st.session_state.llm = Create_Model("gemini-1.5-pro", st.session_state.sys_prompt, st.session_state.temperature)
 
