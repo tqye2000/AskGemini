@@ -404,7 +404,7 @@ def send_mail(query, res, total_tokens):
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
     message = f'[{date_time}] {st.session_state.user}:({st.session_state.user_ip}:: {st.session_state.user_location}):\n'
     message += f'[You]: {query}\n'
-    message += f'[GPT]: {res}\n'
+    message += f'[Gemini]: {res}\n'
     message += f'[Tokens]: {total_tokens}\n'
 
     # Set up the SMTP server and log into your account
