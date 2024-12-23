@@ -61,6 +61,7 @@ class Locale:
     username_prompt: str
     password_prompt: str
     choose_llm_prompt: str
+    support_message: str
     select_placeholder2: str
     stt_placeholder: str
     radio_placeholder: str
@@ -88,6 +89,7 @@ class Locale:
                 username_prompt,
                 password_prompt,
                 choose_llm_prompt,
+                support_message,
                 select_placeholder2,
                 stt_placeholder,
                 radio_placeholder,
@@ -114,6 +116,7 @@ class Locale:
         self.username_prompt= username_prompt,
         self.password_prompt= password_prompt,
         self.choose_llm_prompt = choose_llm_prompt,
+        self.support_message = support_message,
         self.select_placeholder2= select_placeholder2,
         self.stt_placeholder = stt_placeholder,
         self.radio_placeholder= radio_placeholder,
@@ -160,6 +163,7 @@ en = Locale(
     username_prompt="Username/password is incorrect",
     password_prompt="Please enter your username and password",
     choose_llm_prompt="Choose Your Model",
+    support_message="Please report any issues or suggestions to tqye@yahoo.com\n If you like this App please buy me a :coffee:🌝 https://buymeacoffee.com/tqye2006<p> To use other models：<br>Gemini https://geminiecho.streamlit.app<br>OpenAI GPT-4 https://gptecho.streamlit.app <br> Claude https://claudeecho.streamlit.app<br><p>Other Tools：<br>Image Magic https://imagicapp.streamlit.app",
     select_placeholder2="Select Role",
     stt_placeholder="Play Audio",
     radio_placeholder="UI Language",
@@ -188,6 +192,7 @@ zw = Locale(
     username_prompt="用户名/密码错误",
     password_prompt="请输入用户名和密码",
     choose_llm_prompt="请选择你想使用的AI模型",
+    support_message="如遇什么问题或有什么建议，反馈，请电 tqye@yahoo.com\n 使用其它模型<br>Command R+ https://askcrp.streamlit.app<br>OpenAI GPT-4o https://gptecho.streamlit.app<br>Claude https://claudeecho.streamlit.app<p> 其它小工具：<br><a https://imagicapp.streamlit.app/>照片增强，去背景等</a>",
     select_placeholder2="选择AI的角色",
     stt_placeholder="播放",
     radio_placeholder="选择界面语言",
@@ -690,7 +695,7 @@ def main(argv):
     st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
     st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label[0], min_value=0.1, max_value=2.0, value=0.7, step=0.05)
     st.sidebar.markdown("注意：若接下来的话题与之前的不相关，请点击“新话题”按钮，以确保新话题不会受之前内容的影响，同时也有助于节省字符传输量。谢谢！")
-    st.sidebar.markdown("tqye@yahoo.com")
+    st.sidebar.markdown(st.session_state.locale.support_message[0], unsafe_allow_html=True)
 
     sys_role_placeholder = st.write("AI的角色: **" + st.session_state["context_select" + current_user + "value"] + "**")
     tab_input, tab_context = st.tabs(
