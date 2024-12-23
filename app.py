@@ -668,6 +668,12 @@ def Create_Model(model_id: str, sys_prompt: str = BASE_PROMPT, temperature: floa
     )
 
     return model
+    
+@st.cache_resource()
+def Main_Title(text: str) -> None:
+
+    st.markdown(f'<p style="background-color:#ffffff;color:#049ca4;font-weight:bold;font-size:24px;border-radius:2%;">{text}</p>', unsafe_allow_html=True)
+
 
 ##############################################
 ################ MAIN ########################
@@ -676,7 +682,7 @@ def main(argv):
 
     ## ----- Start --------
     #st.header(st.session_state.locale.title[0])
-    st.markdown(f"<h2 style='font-size:20px;'>{st.session_state.locale.title[0]}</h2>", unsafe_allow_html=True)
+    Main_Title(st.session_state.locale.title[0])
     st.session_state.user_ip = get_client_ip()
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
