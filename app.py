@@ -929,7 +929,7 @@ if __name__ == "__main__":
             """
                 <style>
                     .stHeader {{
-                        font-size: 16px;  /* Adjust the size as needed */
+                        font-size: 14px;  /* Adjust the size as needed */
                     }}
                     .appview-container .block-container {{
                         padding-top: {padding_top}rem;
