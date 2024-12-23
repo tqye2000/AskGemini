@@ -1,4 +1,4 @@
 # AskGemini
 
-An echo camber of Gemini Model。
+An web interface to Gemini LLMs。
 Please try: https://geminiecho.streamlit.app
