@@ -676,7 +676,7 @@ def main(argv):
 
     ## ----- Start --------
     #st.header(st.session_state.locale.title[0])
-    st.markdown(f"<h2 style='font-size:14px;'>{st.session_state.locale.title[0]}</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='font-size:18px;'>{st.session_state.locale.title[0]}</h2>", unsafe_allow_html=True)
     st.session_state.user_ip = get_client_ip()
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
