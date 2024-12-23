@@ -676,7 +676,7 @@ def main(argv):
 
     ## ----- Start --------
     #st.header(st.session_state.locale.title[0])
-    st.markdown(f"<h2 style='font-size:18px;'>{st.session_state.locale.title[0]}</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='font-size:20px;'>{st.session_state.locale.title[0]}</h2>", unsafe_allow_html=True)
     st.session_state.user_ip = get_client_ip()
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
@@ -929,9 +929,6 @@ if __name__ == "__main__":
     st.markdown(
             """
                 <style>
-                    .stHeader {{
-                        font-size: 14px;  /* Adjust the size as needed */
-                    }}
                     .appview-container .block-container {{
                         padding-top: {padding_top}rem;
                         padding-bottom: {padding_bottom}rem;
