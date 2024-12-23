@@ -192,7 +192,7 @@ zw = Locale(
     username_prompt="用户名/密码错误",
     password_prompt="请输入用户名和密码",
     choose_llm_prompt="请选择你想使用的AI模型",
-    support_message="如遇什么问题或有什么建议，反馈，请电 tqye@yahoo.com<br>使用其它模型<br><a href='https://askcrp.streamlit.app'>Command R+</a><br><a href='https://gptecho.streamlit.app'>OpenAI GPT-4o</a><br><a href='https://claudeecho.streamlit.app'></a><p> 其它小工具：<br><a href='https://imagicapp.streamlit.app'>照片增强，去背景等</a>",
+    support_message="如遇什么问题或有什么建议，反馈，请电 tqye@yahoo.com<br>使用其它模型<br><a href='https://askcrp.streamlit.app'>Command R+</a><br><a href='https://gptecho.streamlit.app'>OpenAI GPT-4o</a><br><a href='https://claudeecho.streamlit.app'>Claude</a><p> 其它小工具：<br><a href='https://imagicapp.streamlit.app'>照片增强，去背景等</a>",
     select_placeholder2="选择AI的角色",
     stt_placeholder="播放",
     radio_placeholder="选择界面语言",
@@ -928,6 +928,9 @@ if __name__ == "__main__":
     st.markdown(
             """
                 <style>
+                    .stHeader {{
+                        font-size: 16px;  /* Adjust the size as needed */
+                    }}
                     .appview-container .block-container {{
                         padding-top: {padding_top}rem;
                         padding-bottom: {padding_bottom}rem;
