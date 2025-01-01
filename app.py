@@ -36,6 +36,7 @@ import google.generativeai as genai
 #from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 
 genai.configure(api_key=st.secrets["api_key"])
+TOTAL_TRIALS = int(st.secrets["total_trials"])
 
 txt2img_enabled = False
 sendmail = True
@@ -229,7 +230,6 @@ MAX_MESSAGES = 20
 current_user = "**new_chat**"
 
 BASE_PROMPT = "You are a helpful assistant who can answer or handle all my queries!"
-TOTAL_TRIALS = 15
 
 # system messages and/or context
 set_context_all = {"不预设（通用）": ""}
