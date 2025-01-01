@@ -302,42 +302,10 @@ def get_geolocation(ip_address):
         print(f"An error: {ex}")
         return None
 
-def append_element(my_list, new_element, max_elements):
-    '''
-    append new element to the list and remove the first one if reachs max_elements
-    '''
-    if len(my_list) >= max_elements:
-        my_list.pop(0)
-    my_list.append(new_element)
-    return my_list
-
-def remove_elements(my_list, start_index, end_index):
-    '''
-    remove elements from start_index to end_index
-    '''
-    del my_list[start_index:end_index+1]
-    return my_list
-
 
 def randomword(length):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
-
-@st.cache_data(show_spinner=False)
-def get_local_img(file_path: str) -> str:
-    '''
-    Load a byte image and return its base64 encoded string
-    '''
-    
-    return base64.b64encode(open(file_path, "rb").read()).decode("utf-8")
-
-@st.cache_data(show_spinner=False)
-def get_css() -> str:
-    ''' 
-    Read CSS code from style.css file
-    '''
-    with open(os.path.join(FILE_ROOT, "style.css"), "r") as f:
-        return f"<style>{f.read()}</style>"
         
 def role_change_callback(arg):
     try:
