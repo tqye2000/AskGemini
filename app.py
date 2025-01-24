@@ -37,6 +37,7 @@ import google.generativeai as genai
 
 genai.configure(api_key=st.secrets["api_key"])
 TOTAL_TRIALS = int(st.secrets["total_trials"])
+VALID_USERS = st.secrets["valid_users"].split(',')
 
 txt2img_enabled = False
 sendmail = True
@@ -824,7 +825,7 @@ def main(argv):
             """, unsafe_allow_html=True)
         st.markdown(f'<p class="tiny-font">{small_print}</p>', unsafe_allow_html=True)
 
-        if st.session_state.total_queries > TOTAL_TRIALS:
+        if st.session_state.user not in VALID_USERS and st.session_state.total_queries > TOTAL_TRIALS:
             st.warning("# 你已经超过了今天的试用额度。请稍后再试！或联系管理员 tqye@yahoo.com 申请一个账号。")
 
 ##############################
@@ -934,11 +935,17 @@ if __name__ == "__main__":
     #     main(sys.argv)
     #----------------------------------------------
 
-    if "context_select" + current_user + "value" not in st.session_state:
-        st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
-    if "context_input" + current_user + "value" not in st.session_state:
-        st.session_state["context_input" + current_user + "value"] = ""
+    # Create a input box for inviting user to enter their given name
+    st.write("欢迎来到Gemini AI 回音室！")
+    st.session_state.user = st.text_input(label="请输入你的ID：", value="", max_chars=20)
+    if st.session_state.user != None and st.session_state.user != "" and st.session_state.user != "invalid":
+        current_user = st.session_state.user
 
-    main(sys.argv)
+        if "context_select" + current_user + "value" not in st.session_state:
+            st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
+        if "context_input" + current_user + "value" not in st.session_state:
+            st.session_state["context_input" + current_user + "value"] = ""
+
+        main(sys.argv)
 
     
