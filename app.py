@@ -640,9 +640,7 @@ def Create_Model(model_id: str, sys_prompt: str = BASE_PROMPT, temperature: floa
     
 @st.cache_resource()
 def Main_Title(text: str) -> None:
-
-    st.markdown(f'<p style="background-color:#ffffff;color:#049ca4;font-weight:bold;font-size:24px;border-radius:2%;">{text}</p>', unsafe_allow_html=True)
-
+    st.markdown(f'<h1 style="background-color:#ffffff;color:#049ca4;font-weight:bold;font-size:22px;border-radius:2%;">{text}</h1>', unsafe_allow_html=True)
 
 ##############################################
 ################ MAIN ########################
@@ -652,6 +650,7 @@ def main(argv):
     ## ----- Start --------
     #st.header(st.session_state.locale.title[0])
     Main_Title(st.session_state.locale.title[0])
+    st.markdown(f"Hello {st.session_state.user}", unsafe_allow_html=True)
     st.session_state.user_ip = get_client_ip()
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
@@ -938,16 +937,25 @@ if __name__ == "__main__":
     #----------------------------------------------
 
     # Create a input box for inviting user to enter their given name
-    st.write("欢迎来到Gemini AI 回音室！")
-    st.session_state.user = st.text_input(label="请输入你的ID：", value="", max_chars=20)
-    if st.session_state.user != None and st.session_state.user != "" and st.session_state.user != "invalid":
-        current_user = st.session_state.user
+    if st.session_state.user == "" or st.session_state.user is None:
+        st.write("欢迎来到Gemini AI 回音室！")
+        st.session_state.user = st.text_input(label="请输入你的ID：", value="", max_chars=20)
+        if st.session_state.user != None and st.session_state.user != "" and st.session_state.user != "invalid":
+            current_user = st.session_state.user
+            if "context_select" + current_user + "value" not in st.session_state:
+                st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
+            if "context_input" + current_user + "value" not in st.session_state:
+                st.session_state["context_input" + current_user + "value"] = ""
 
+            main(sys.argv)
+    else:
+        current_user = st.session_state.user
         if "context_select" + current_user + "value" not in st.session_state:
             st.session_state["context_select" + current_user + "value"] = '不预设（通用）'
         if "context_input" + current_user + "value" not in st.session_state:
             st.session_state["context_input" + current_user + "value"] = ""
 
         main(sys.argv)
+
 
     
