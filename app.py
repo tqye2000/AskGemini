@@ -39,9 +39,6 @@ genai.configure(api_key=st.secrets["api_key"])
 TOTAL_TRIALS = int(st.secrets["total_trials"])
 VALID_USERS = st.secrets["valid_users"].split(',')
 
-txt2img_enabled = False
-sendmail = True
-
 class Locale:    
     ai_role_options: List[str]
     ai_role_prefix: str
@@ -227,6 +224,7 @@ st.markdown(
 
 # maximum messages remembered
 MAX_MESSAGES = 20
+sendmail = True
 
 current_user = "**new_chat**"
 
@@ -548,48 +546,6 @@ def Show_Messages():
     st.write(msg, unsafe_allow_html=True)
 
 
-def Dalle_Image_Creation(prompt, n_imgs=1):
-    print(f"create_image: {prompt}")
-    retry_count = 0
-    try:
-        response = client.images.generate(
-                        model="dall-e-3",
-                        prompt=prompt,  # 图片描述
-                        n=n_imgs,  # 每次生成图片的数量
-                        #ize=conf().get("image_create_size", "256x256"),  # 图片大小,可选有 256x256, 512x512, 1024x1024
-                        #size="512x512",  # 图片大小,可选有 256x256, 512x512, 1024x1024
-                        size="1024x1024",   # dall-e-3 at least 1k x 1k
-                        quality="standard",
-                        response_format="b64_json", 
-        )
-	  #except client.error.RateLimitError as e:
-		# print(f"create_image warning: {e}")
-		# return False, "提问太快啦，请休息一下再问我吧"
-        # # if retry_count < 1:
-            # # time.sleep(5)
-            # # logger.warn("[OPEN_AI] ImgCreate RateLimit exceed, 第{}次重试".format(retry_count + 1))
-            # # return self.create_img(query, retry_count + 1)
-        # # else:
-            # # return False, "提问太快啦，请休息一下再问我吧"
-    except Exception as e:
-        print(f"Error: {str(e)}", 0)
-        save_log("Error", str(e), 0)
-        #logger.exception(e)
-        return False, str(e)
-
-    file_path = get_app_folder() + '/'+ f"{prompt[:5]}-{response.created}.json"
-
-    image_dict = response.data[0]
-    image_data = b64decode(image_dict.b64_json)
-    base_path = os.path.splitext(file_path)[0]
-    image_file = base_path + ".png"
-    print(f"image_file: {image_file}")
-    with open(image_file, mode="wb") as png:
-        png.write(image_data)
-
-    return True, image_file
-
-
 #@st.cache_data()
 def Model_Completion(parts: list):
     '''
@@ -655,9 +611,11 @@ def main(argv):
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
 
-    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 Pro", "Gemini 2.0 flash", "Gemini 1.5 Pro", "Gemini 2.0 think", "Gemini 1.5 flash",),on_change=Model_Changed)
+    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 Pro", "Gemini 2.0 flash", "Gemini 2.0 flash Exp", "Gemini 1.5 Pro", "Gemini 2.0 think", "Gemini 1.5 flash",),on_change=Model_Changed)
     if st.session_state.model_version == "Gemini 1.5 Pro":
         st.session_state.llm = Create_Model("gemini-1.5-pro-latest", st.session_state.sys_prompt, st.session_state.temperature)
+    elif st.session_state.model_version == "Gemini 2.0 flash Exp":
+        st.session_state.llm = Create_Model("gemini-2.0-flash-exp", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 Pro":
         st.session_state.llm = Create_Model("gemini-2.0-pro-exp-02-05", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 1.5 flash":
@@ -753,22 +711,8 @@ def main(argv):
                 prompt = user_input.strip()
                 prefixes = ["!!!", "！！！"]
                 if(prompt.startswith(tuple(prefixes))):
-                    if (txt2img_enabled == False): 
-                        text.markdown(f"画画暂时没有开放，请以后再试！", unsafe_allow_html=True)
-                        save_log(prompt, "画画暂时没有开放，请以后再试！", st.session_state.total_tokens)
-                    else:
-                        #-- Using Dall-E3 Model ------
-                        prompt = " ".join(prompt.split()[1:])
-                        with st.spinner('Wait ...'):
-                            isOK, img_url = Dalle_Image_Creation(prompt, 1)
-                            print(img_url)
-                            if(isOK == True):
-                                st.session_state.total_tokens += 1500
-                                save_log(prompt, img_url, st.session_state.total_tokens)
-                                Show_Images(chats_placeholder, prompt, img_url)
-                            else:
-                                save_log(prompt, "画画失败。请等下再试！", st.session_state.total_tokens)
-                                chats_placeholder.markdown(f"画画失败。请等下再试！", unsafe_allow_html=True)
+                    st.markdown(f"画画暂时没有开放，请以后再试！", unsafe_allow_html=True)
+                    save_log(prompt, "画画暂时没有开放，请以后再试！", st.session_state.total_tokens)
                 else:
                     parts.append({"text": prompt})
                     if st.session_state.loaded_content.strip() != "":
