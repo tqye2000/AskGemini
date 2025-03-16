@@ -34,7 +34,7 @@ from email.mime.image import MIMEImage
 import libs
 
 from google import genai
-#from google.genai import types
+from google.genai import types
 
 VALID_USERS = st.secrets["valid_users"].split(',')
 TEXT2IMG_ENABLES = st.secrets["txt2img_enabled"]
