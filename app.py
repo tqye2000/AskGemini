@@ -351,19 +351,19 @@ def save_log(query, res, total_tokens):
     f.write(f"User Geo: {st.session_state.user_location}")
     f.write(100 * '-' + '\n\n')
 
-    try:
-        if sendmail == True:
-            send_mail(query, res, total_tokens)
-    except Exception as ex:
-        f.write(f'Sending mail failed {ex}\n')
-        pass
+    # try:
+    #     if sendmail == True:
+    #         send_mail(query, res, total_tokens)
+    # except Exception as ex:
+    #     f.write(f'Sending mail failed {ex}\n')
+    #     pass
         
     f.close()
 
     print(f'[{date_time}]: {st.session_state.user}: {remote_ip}\n')
     print(res+'\n')
 
-@st.cache_data(show_spinner=False)
+#@st.cache_data(show_spinner=False)
 def send_mail(query, res, total_tokens):
     '''
     '''
@@ -371,7 +371,12 @@ def send_mail(query, res, total_tokens):
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
     message = f'[{date_time}] {st.session_state.user}:({st.session_state.user_ip}:: {st.session_state.user_location}):\n'
     message += f'[You]: {query}\n'
-    message += f'[Gemini]: {res}\n'
+    if 'text' in res:
+        generated_text = res["text"]
+    else:
+        generated_text = "No text generated!"
+
+    message += f'[Gemini]: {generated_text}\n'
     message += f'[Tokens]: {total_tokens}\n'
 
     # Set up the SMTP server and log into your account
@@ -397,15 +402,13 @@ def send_mail(query, res, total_tokens):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        filename, file_extension = os.path.splitext(res)
-        if file_extension == ".png":
+        if "image" in res:
             # Open the image file in binary mode
-            with open(res, 'rb') as fp:
-                # Create a MIMEImage object with the image data
-                img = MIMEImage(fp.read())
-
-            # Attach the image to the MIMEMultipart object
-            msg.attach(img)
+            with BytesIO() as buffer:
+                res["image"].save(buffer, format="jpg")
+                img = MIMEImage(buffer.getvalue())       
+                # Attach the image to the MIMEMultipart object
+                msg.attach(img)
     except Exception as e:
         print(f"Error: {str(e)}", 0)
 
@@ -523,23 +526,20 @@ def Show_Messages(placeholder):
 
     #print(f"Number of messages: {len(st.session_state.messages)}")
     #with placeholder:
-    for message in st.session_state.messages[::-1]:
+    for message in st.session_state.messages[::-1]: # reverse order
     #for message in st.session_state.messages[1:]:
         #print(f"Show Message: {message}")
         if message['role'] == 'user':
-            role = '**You**'
+            role = 'You'
             alignment = "right"
-            color = "blue"
         elif message['role'] == 'model':
-            role = '**AI**'
+            role = 'AI'
             alignment = "left"
-            color = "black"
         else:
             role = message['role']
             alignment = "left"
-            color = "black"
 
-        st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{role}:</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: {alignment};'><b>{role}</b>:</div>", unsafe_allow_html=True)
 
         #st.write(f"{role}:")
 
@@ -551,27 +551,19 @@ def Show_Messages(placeholder):
             else:
                 text = f"{message['parts'][0]}"
             #st.write(text, unsafe_allow_html=True)
-            st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{text}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
         elif isinstance(message['parts'], dict):
             if "text" in message['parts']:
                 text = message['parts']['text']
                 #st.write(text, unsafe_allow_html=True)
-                st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{text}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
             if "image" in message['parts']:
                 st.image(message['parts']["image"])
         else:
             text = f"{message['parts']}"
             #st.write(text, unsafe_allow_html=True)
-            st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{text}</div>", unsafe_allow_html=True)
-            
-    #     if role == '**You**':
-    #         #print("Orignal text:", text)
-    #         text_s = libs.remove_contexts(text)
-    #         #print("New text:", text_s)
-    #         messages_str.append(f"{role}: {text_s}")
-    #     else:
-    #         messages_str.append(f"{role}: {text}")
-    
+            st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
+                
     # msg = str("\n\n".join(messages_str))
     # st.write(msg, unsafe_allow_html=True)
 
@@ -795,8 +787,11 @@ def main(argv):
                         st.session_state.total_queries += 1
                         st.session_state.total_tokens += tokens
 
+                        #print(f"RETURNED ANSWER: {answer}\n")
+
                         if 'text' in answer:
                             generated_text = answer["text"]
+                            Show_Audio_Player(generated_text)
                         else:
                             generated_text = "No text generated!"
 
@@ -810,9 +805,9 @@ def main(argv):
                     #with chats_placeholder:
                     Show_Messages(st.session_state.chats_placeholder)
 
-                    Show_Audio_Player(generated_text)
-
                     save_log(prompt, generated_text, st.session_state.total_tokens)
+                    if send_mail:
+                        send_mail(prompt, answer, st.session_state.total_tokens)
 
         cost = 8*0.015 * st.session_state.total_tokens /1000
         if st.session_state.user_id in ["wenli2000", "yezheng", "yayuan181"]:
