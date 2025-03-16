@@ -5,6 +5,7 @@
 # When      | Who            | What
 # 19/12/2023| Tian-Qing Ye   | Created
 # 15/03/2025| Tian-Qing Ye   | Updated to support Gemini 2.0 flash Exp model
+# 2016/03/2025| Tian-Qing Ye | Further updated
 ############################################################################
 import streamlit as st
 from streamlit import runtime
@@ -495,7 +496,6 @@ def Login() -> str:
 
 
 def Clear_Chat() -> None:
-    st.session_state.generated = []
     st.session_state.history = []
     st.session_state.messages = []
     st.session_state.contents = []
@@ -512,6 +512,7 @@ def Delete_Files() -> None:
 
     st.session_state.loaded_content = ""
     st.session_state.loaded_image = None
+    st.session_state.contents = []
     st.session_state.key = str(random.randint(1000, 10000000))      # HACK use the following two lines to reset update the file_uploader key
     st.rerun()
 
@@ -694,24 +695,20 @@ def main(argv):
     st.markdown(f"Hello {st.session_state.user}", unsafe_allow_html=True)
     st.session_state.user_ip = get_client_ip()
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
-    #print(st.session_state.user_location)
 
     st.session_state.client = Create_Client()
     
-    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 Pro", "Gemini 2.0 flash Exp", "Gemini 2.0 think", "Gemini 2.0 flash", "Gemini 1.5 Pro", "Gemini 1.5 flash",),on_change=Model_Changed)
-    if st.session_state.model_version == "Gemini 1.5 Pro":
-        st.session_state.llm = "gemini-1.5-pro-latest"
+    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
+                                                  options=("Gemini 2.0 Pro", "Gemini 2.0 flash Exp", "Gemini 2.0 think", "Gemini 2.0 flash",), on_change=Model_Changed)
+    if st.session_state.model_version == "Gemini 2.0 flash":
+        st.session_state.llm = "gemini-2.0-flash"
     elif st.session_state.model_version == "Gemini 2.0 flash Exp":
         st.session_state.llm = "gemini-2.0-flash-exp"
         st.session_state.enable_search = False
-    elif st.session_state.model_version == "Gemini 2.0 Pro":
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
-    elif st.session_state.model_version == "Gemini 1.5 flash":
-        st.session_state.llm = "gemini-1.5-flash"
-    elif st.session_state.model_version == "Gemini 2.0 flash":
-        st.session_state.llm = "gemini-2.0-flash"
     elif st.session_state.model_version == "Gemini 2.0 flash think":
         st.session_state.llm = "gemini-2.0-flash-thinking-exp"
+    elif st.session_state.model_version == "Gemini 2.0 Pro":
+        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
     else:
         st.session_state.llm = "gemini-2.0-pro-exp-02-05"
 
@@ -925,9 +922,6 @@ if __name__ == "__main__":
 
     if "user_text" not in st.session_state:
         st.session_state.user_text = ""
-
-    if "generated" not in st.session_state:
-        st.session_state.generated = []
 
     if "history" not in st.session_state:
         st.session_state.history = [
