@@ -54,6 +54,7 @@ class Locale:
     chat_run_btn: str
     chat_clear_btn: str
     clear_doc_btn: str
+    enable_search_label: str
     chat_save_btn: str
     file_upload_label: str
     temperature_label: str
@@ -82,6 +83,7 @@ class Locale:
                 chat_run_btn,
                 chat_clear_btn,
                 clear_doc_btn,
+                enable_search_label,
                 chat_save_btn,
                 file_upload_label,
                 temperature_label,
@@ -109,6 +111,7 @@ class Locale:
         self.chat_run_btn= chat_run_btn,
         self.chat_clear_btn= chat_clear_btn,
         self.clear_doc_btn = clear_doc_btn,
+        self.enable_search_label = enable_search_label,
         self.chat_save_btn= chat_save_btn,
         self.file_upload_label = file_upload_label,
         self.temperature_label = temperature_label,
@@ -156,6 +159,7 @@ en = Locale(
     chat_run_btn="✔️ Send",
     chat_clear_btn="New Topic",
     clear_doc_btn=":x: Clear Doc",
+    enable_search_label="Enable Web Search",
     chat_save_btn="Save",
     file_upload_label="You can chat with an uploaded file (your file will never be saved anywhere)",
     temperature_label="Model Temperature",
@@ -185,6 +189,7 @@ zw = Locale(
     chat_run_btn="✔️ 提交",
     chat_clear_btn=":new: 新话题",
     clear_doc_btn=":x: 清空文件",
+    enable_search_label="启用网络搜索",
     chat_save_btn="保存",
     file_upload_label="你可以询问一个上传的文件或图片（文件内容只在内存，不会被保留）",
     temperature_label="模型温度",
@@ -627,18 +632,28 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
                     st.session_state["contents"].append(image)
                     #st.image(image)
         else:
-            response = st.session_state.client.models.generate_content(
-                model = st.session_state.llm,
-                contents = contents,
-                config=genai.types.GenerateContentConfig(response_modalities=['Text'],
-                                                         system_instruction=sys_prompt,
-                                                         temperature=temperature,
-                                                         tools=[
-                                                             types.Tool(google_search=types.GoogleSearch())
-                                                        ],
-                                                        )
-                )
-            
+            if st.session_state.enable_search:
+                response = st.session_state.client.models.generate_content(
+                    model = st.session_state.llm,
+                    contents = contents,
+                    config=genai.types.GenerateContentConfig(response_modalities=['Text'],
+                                                            system_instruction=sys_prompt,
+                                                            temperature=temperature,
+                                                            tools=[
+                                                                types.Tool(google_search=types.GoogleSearch())
+                                                            ],
+                                                            )
+                    )
+            else:
+                response = st.session_state.client.models.generate_content(
+                    model = st.session_state.llm,
+                    contents = contents,
+                    config=genai.types.GenerateContentConfig(response_modalities=['Text'],
+                                                            system_instruction=sys_prompt,
+                                                            temperature=temperature,
+                                                            )
+                    )
+                            
             # If the AI role is '汉语新解' or '诗词卡片', remove the code marks
             if st.session_state["context_select" + current_user + "value"] in ['汉语新解', '诗词卡片']:
                 ret_content = libs.remove_contexts(response.text)
@@ -688,6 +703,7 @@ def main(argv):
         st.session_state.llm = "gemini-1.5-pro-latest"
     elif st.session_state.model_version == "Gemini 2.0 flash Exp":
         st.session_state.llm = "gemini-2.0-flash-exp"
+        st.session_state.enable_search = False
     elif st.session_state.model_version == "Gemini 2.0 Pro":
         st.session_state.llm = "gemini-2.0-pro-exp-02-05"
     elif st.session_state.model_version == "Gemini 1.5 flash":
@@ -767,13 +783,13 @@ def main(argv):
                         doc_len = len(st.session_state.loaded_content)
                         #print(f"The size of the document:  {len(st.session_state.loaded_content)}")
                         st.session_state.uploaded_filename_placeholder.write(f"{uploaded_file.name} ({doc_len})")
+                        st.session_state.enable_search = False
         with st.session_state.buttons_placeholder:
-            st.session_state.new_topic_button = st.button(label=st.session_state.locale.chat_clear_btn[0], key="newTopic", on_click=Clear_Chat)
-            #c1, c2 = st.columns(2)
-            #with c1:
-            #    st.session_state.new_topic_button = st.button(label=st.session_state.locale.chat_clear_btn[0], key="newTopic", on_click=Clear_Chat)
-            #with c2:
-            #    st.session_state.clear_doc_button = st.button(label=st.session_state.locale.clear_doc_btn[0], key="clearDoc", on_click=Delete_Files)
+            c1, c2 = st.columns(2)
+            with c1:
+                st.session_state.new_topic_button = st.button(label=st.session_state.locale.chat_clear_btn[0], key="newTopic", on_click=Clear_Chat)
+            with c2:
+                st.session_state.enable_search = st.checkbox(label=st.session_state.locale.enable_search_label[0], value=st.session_state.enable_search)
 
         user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder[0], value=st.session_state.user_text, max_chars=8000, key="1")
         send_button = st.button(st.session_state.locale.chat_run_btn[0], disabled=st.session_state.out_quota)
@@ -918,6 +934,9 @@ if __name__ == "__main__":
                 {"role": "user", "parts": "Hello"},
                 {"role": "model", "parts": "Great to meet you. How can I assist you?"},
             ]
+
+    if "enable_search" not in st.session_state:
+        st.session_state.enable_search = False
 
     if 'total_tokens' not in st.session_state:
         st.session_state.total_tokens = 0
