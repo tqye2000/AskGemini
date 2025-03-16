@@ -223,7 +223,7 @@ st.markdown(
 )
 
 # maximum messages remembered
-MAX_MESSAGES = 20
+MAX_MESSAGES = 10
 sendmail = True
 
 current_user = "**new_chat**"
@@ -581,12 +581,12 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
     '''    
     #print("DEBUG incoming contents:", contents)
 
-    # safety_settings = [
-    #     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-    #     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-    #     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-    #     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-    # ]
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+    ]
 
     tokens = 0
     ret_content = {}
@@ -595,7 +595,9 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
             response = st.session_state.client.models.generate_content(
                 model = "models/gemini-2.0-flash-exp",
                 contents = contents,
-                config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'])
+                config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'],
+                                                         safety_settings=safety_settings,
+                                                         )
                 )
 
             for part in response.candidates[0].content.parts:
