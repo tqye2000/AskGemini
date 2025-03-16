@@ -4,7 +4,6 @@
 # History
 # When      | Who            | What
 # 19/12/2023| Tian-Qing Ye   | Created
-# 15/03/2025| Tian-Qing Ye   | Updated to support Gemini 2.0 flash Exp model
 ############################################################################
 import streamlit as st
 from streamlit import runtime
@@ -33,9 +32,10 @@ from email.mime.image import MIMEImage
 
 import libs
 
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+#from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 
+genai.configure(api_key=st.secrets["api_key"])
 TOTAL_TRIALS = int(st.secrets["total_trials"])
 VALID_USERS = st.secrets["valid_users"].split(',')
 
@@ -490,8 +490,6 @@ def Login() -> str:
 def Clear_Chat() -> None:
     st.session_state.generated = []
     st.session_state.history = []
-    st.session_state.messages = []
-    st.session_state.contents = []
     st.session_state.user_text = ""
     st.session_state.loaded_content = ""
     st.session_state.loaded_image = None
@@ -519,131 +517,83 @@ def Show_Images(placeholder, desc, img_url):
     image = Image.open(img_url)
     placeholder.image(image, caption=desc)
 
-def Show_Messages(placeholder):
+def Show_Messages():
 
-    #print(f"Number of messages: {len(st.session_state.messages)}")
-    #with placeholder:
-    for message in st.session_state.messages[::-1]:
-    #for message in st.session_state.messages[1:]:
-        #print(f"Show Message: {message}")
+    messages_str = []
+    for message in st.session_state.messages[1:]:
+        #print(f"Message: {message}")
         if message['role'] == 'user':
             role = '**You**'
-            alignment = "right"
-            color = "blue"
         elif message['role'] == 'model':
             role = '**AI**'
-            alignment = "left"
-            color = "black"
         else:
             role = message['role']
-            alignment = "left"
-            color = "black"
 
-        st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{role}:</div>", unsafe_allow_html=True)
-
-        #st.write(f"{role}:")
-
-        #print(f"Show Message Parts: {message['parts']}")
-
+#        messages_str.append(f"{role}: {_['content']}")
         if isinstance(message['parts'], list):
-            if "text" in message['parts'][0]:
-                text = message['parts'][0]['text']
-            else:
-                text = f"{message['parts'][0]}"
-            #st.write(text, unsafe_allow_html=True)
-            st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{text}</div>", unsafe_allow_html=True)
-        elif isinstance(message['parts'], dict):
-            if "text" in message['parts']:
-                text = message['parts']['text']
-                #st.write(text, unsafe_allow_html=True)
-                st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{text}</div>", unsafe_allow_html=True)
-            if "image" in message['parts']:
-                st.image(message['parts']["image"])
+            text = message['parts'][0]['text']
         else:
             text = f"{message['parts']}"
-            #st.write(text, unsafe_allow_html=True)
-            st.markdown(f"<div style='text-align: {alignment}; color: {color};'>{text}</div>", unsafe_allow_html=True)
-            
-    #     if role == '**You**':
-    #         #print("Orignal text:", text)
-    #         text_s = libs.remove_contexts(text)
-    #         #print("New text:", text_s)
-    #         messages_str.append(f"{role}: {text_s}")
-    #     else:
-    #         messages_str.append(f"{role}: {text}")
+        if role == '**You**':
+            #print("Orignal text:", text)
+            text_s = libs.remove_contexts(text)
+            #print("New text:", text_s)
+            messages_str.append(f"{role}: {text_s}")
+        else:
+            messages_str.append(f"{role}: {text}")
     
-    # msg = str("\n\n".join(messages_str))
-    # st.write(msg, unsafe_allow_html=True)
+    msg = str("\n\n".join(messages_str))
+    st.write(msg, unsafe_allow_html=True)
 
 
-def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature: float = 0.7):
+#@st.cache_data()
+def Model_Completion(parts: list):
     '''
     '''    
-    #print("DEBUG incoming contents:", contents)
-
-    # safety_settings = [
-    #     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-    #     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-    #     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-    #     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-    # ]
-
     tokens = 0
-    ret_content = {}
     try:
-        if st.session_state.model_version == "Gemini 2.0 flash Exp":
-            response = st.session_state.client.models.generate_content(
-                model = "models/gemini-2.0-flash-exp",
-                contents = contents,
-                config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'])
-                )
+        #response = st.session_state.llm.generate_content(messages)
 
-            for part in response.candidates[0].content.parts:
-                if part.text is not None:
-                    print(part.text)
-                    ret_content["text"] = part.text
-                    #st.write(part.text)
-                    st.session_state["contents"].append(part.text)
-                elif part.inline_data is not None:
-                    image = Image.open(BytesIO(part.inline_data.data))
-                    #image.show()
-                    ret_content["image"] = image
-                    st.session_state["contents"].append(image)
-                    #st.image(image)
+        chat = st.session_state.llm.start_chat(
+            history=st.session_state.history,
+        )
+
+        response = chat.send_message(parts)
+
+        # If the AI role is '汉语新解' or '诗词卡片', remove the code marks
+        if st.session_state["context_select" + current_user + "value"] in ['汉语新解', '诗词卡片']:
+            ret_content = libs.remove_contexts(response.text)
         else:
-            response = st.session_state.client.models.generate_content(
-                model = st.session_state.llm,
-                contents = contents,
-                config=genai.types.GenerateContentConfig(response_modalities=['Text'],
-                                                         system_instruction=sys_prompt,
-                                                         temperature=temperature,)
-                )
-            
-            # If the AI role is '汉语新解' or '诗词卡片', remove the code marks
-            if st.session_state["context_select" + current_user + "value"] in ['汉语新解', '诗词卡片']:
-                ret_content = libs.remove_contexts(response.text)
-            else:
-                ret_content["text"] = response.text
+            ret_content = response.text
 
         print(f"AI model returned: {ret_content}")
         print(response.usage_metadata)
         # ( prompt_token_count: 11, candidates_token_count: 73, total_token_count: 84 )
         tokens = response.usage_metadata.total_token_count
     except Exception as e:
-        ret_content["text"] = f"AI model returned error! str({e})"
+        ret_content = f"AI model returned error! str({e})"
 
-    # construct chat histrory
+    st.session_state.history = chat.history # Update the history to show all turns
 
     return ret_content, tokens
 
 @st.cache_data()
-def Create_Client():
+def Create_Model(model_id: str, sys_prompt: str = BASE_PROMPT, temperature: float = 0.7):
     '''
     '''
-    client = genai.Client(api_key=st.secrets["api_key"])
 
-    return client
+    print(f"Create Model: {model_id}")
+    print(f"System Prompt: {sys_prompt}")
+#    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel(model_id, 
+                                  system_instruction=sys_prompt,
+                                  generation_config=genai.types.GenerationConfig(
+                                    temperature=temperature,
+                                  )
+    )
 
+    return model
+    
 @st.cache_resource()
 def Main_Title(text: str) -> None:
     st.markdown(f'<h1 style="background-color:#ffffff;color:#049ca4;font-weight:bold;font-size:22px;border-radius:2%;">{text}</h1>', unsafe_allow_html=True)
@@ -661,23 +611,21 @@ def main(argv):
     st.session_state.user_location = get_geolocation(st.session_state.user_ip)
     #print(st.session_state.user_location)
 
-    st.session_state.client = Create_Client()
-    
-    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 Pro", "Gemini 2.0 flash Exp", "Gemini 2.0 think", "Gemini 2.0 flash", "Gemini 1.5 Pro", "Gemini 1.5 flash",),on_change=Model_Changed)
+    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], options=("Gemini 2.0 Pro", "Gemini 2.0 flash", "Gemini 2.0 flash Exp", "Gemini 1.5 Pro", "Gemini 2.0 think", "Gemini 1.5 flash",),on_change=Model_Changed)
     if st.session_state.model_version == "Gemini 1.5 Pro":
-        st.session_state.llm = "gemini-1.5-pro-latest"
+        st.session_state.llm = Create_Model("gemini-1.5-pro-latest", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 flash Exp":
-        st.session_state.llm = "gemini-2.0-flash-exp"
+        st.session_state.llm = Create_Model("gemini-2.0-flash-exp", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 Pro":
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
+        st.session_state.llm = Create_Model("gemini-2.0-pro-exp-02-05", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 1.5 flash":
-        st.session_state.llm = "gemini-1.5-flash"
+        st.session_state.llm = Create_Model("gemini-1.5-flash", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 flash":
-        st.session_state.llm = "gemini-2.0-flash"
+        st.session_state.llm = Create_Model("gemini-2.0-flash", st.session_state.sys_prompt, st.session_state.temperature)
     elif st.session_state.model_version == "Gemini 2.0 flash think":
-        st.session_state.llm = "gemini-2.0-flash-thinking-exp"
+        st.session_state.llm = Create_Model("gemini-2.0-flash-thinking-exp", st.session_state.sys_prompt, st.session_state.temperature)
     else:
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
+        st.session_state.llm = Create_Model("gemini-1.5-pro", st.session_state.sys_prompt, st.session_state.temperature)
 
     st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
     st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label[0], min_value=0.1, max_value=2.0, value=0.7, step=0.05)
@@ -715,24 +663,23 @@ def main(argv):
         )
 
     with tab_input:
-        st.session_state.chats_placeholder = st.empty()
+        chats_placeholder = st.empty()
+
+        with chats_placeholder:
+            Show_Messages()
+
         st.session_state.gtts_placeholder = st.empty()
         st.session_state.uploading_file_placeholder = st.empty()
         st.session_state.uploaded_filename_placeholder = st.empty()
         st.session_state.buttons_placeholder = st.empty()
         st.session_state.input_placeholder = st.empty()
 
-        # #with chats_placeholder:
-        # Show_Messages(chats_placeholder)
-
-        pil_image = None
-
         with st.session_state.uploading_file_placeholder:
             uploaded_file = st.file_uploader(label=st.session_state.locale.file_upload_label[0], type=['docx', 'txt', 'pdf', 'csv', 'jpg','jpeg', 'png', 'webp'], key=st.session_state.key, accept_multiple_files=False,)
             if uploaded_file is not None:
                 mime_type = uploaded_file.type
                 if uploaded_file.name.split(".")[-1] in ['jpeg', 'jpg', 'png']:
-                        pil_image = Image.open(uploaded_file)
+                        image = Image.open(uploaded_file)
                         st.session_state.loaded_image, ierror = libs.GetContexts(uploaded_file)
                         if ierror != 0:
                             st.session_state.uploaded_filename_placeholder.warning(st.session_state.loaded_content)
@@ -767,48 +714,45 @@ def main(argv):
                     st.markdown(f"画画暂时没有开放，请以后再试！", unsafe_allow_html=True)
                     save_log(prompt, "画画暂时没有开放，请以后再试！", st.session_state.total_tokens)
                 else:
-                    parts.append(prompt)
-                    # if st.session_state.model_version == "Gemini 2.0 flash Exp":
-                    #     parts.append(prompt)
-                    # else: 
-                    #     parts.append({"text": prompt})
+                    parts.append({"text": prompt})
                     if st.session_state.loaded_content.strip() != "":
                         print("Context supplied!")
-                        parts.append(st.session_state.loaded_content.strip())
+                        parts.append({"text": st.session_state.loaded_content.strip()})
+
                     if st.session_state.loaded_image != None:
                         print("Image supplied!")
-                        parts.append(pil_image)
+                        parts.append({"mime_type": 'image/jpeg',"data": st.session_state.loaded_image})
+                        st.session_state.messages += [
+                            {
+                                "role": "user", 
+                                "parts": [
+                                        {"type": "text", "text": prompt,},
+                                        {
+                                            "type": "image_url",
+                                            "image_url": {
+                                                "url": f"data:image/jpeg;base64,{st.session_state.loaded_image}"
+                                            },
+                                        },
+                                     ],
+                                }
+                        ]
+                    else:
+                        st.session_state.messages += [{"role": "user", "parts": prompt}]
 
-                    st.session_state.messages += [{"role": "user", "parts": parts}]
-                    #print(f"DEBUG0: {st.session_state.messages}\n")
-
+                    #print(st.session_state.messages)
                     with st.spinner('Wait ...'):
-                        if st.session_state.model_version == "Gemini 2.0 flash Exp":
-                            st.session_state.contents += parts
-                            #answer, tokens = Model_Completion(parts)
-                            answer, tokens = Model_Completion(st.session_state.contents)
-                        else:
-                            st.session_state.contents += parts
-                            answer, tokens = Model_Completion(st.session_state.contents, st.session_state.sys_prompt, st.session_state.temperature)
+                        answer, tokens = Model_Completion(parts)
                         st.session_state.total_queries += 1
                         st.session_state.total_tokens += tokens
 
-                        if 'text' in answer:
-                            generated_text = answer["text"]
-                        else:
-                            generated_text = "No text generated!"
+                    generated_text = answer + '\n'
+                    st.session_state["messages"] += [{"role": "model", "parts": generated_text}]
 
-                        if st.session_state.model_version == "Gemini 2.0 flash Exp":
-                            st.session_state["messages"] += [{"role": "model", "parts": answer}]
-                        else:
-                            st.session_state["messages"] += [{"role": "model", "parts": [answer]}]
 
-                    #print(f"DEBUG2: {st.session_state.messages}")
+                    with chats_placeholder:
+                        Show_Messages()
 
-                    #with chats_placeholder:
-                    Show_Messages(st.session_state.chats_placeholder)
-
-                    Show_Audio_Player(generated_text)
+                    Show_Audio_Player(answer)
 
                     save_log(prompt, generated_text, st.session_state.total_tokens)
 
@@ -892,10 +836,6 @@ if __name__ == "__main__":
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
-
-    # used by 2.0 flash exp model
-    if "contents" not in st.session_state:
-        st.session_state.contents = []
 
     if "sys_prompt" not in st.session_state:
         st.session_state.sys_prompt = BASE_PROMPT
