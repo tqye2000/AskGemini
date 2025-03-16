@@ -34,10 +34,12 @@ from email.mime.image import MIMEImage
 import libs
 
 from google import genai
-from google.genai import types
+#from google.genai import types
 
-TOTAL_TRIALS = int(st.secrets["total_trials"])
 VALID_USERS = st.secrets["valid_users"].split(',')
+TEXT2IMG_ENABLES = st.secrets["txt2img_enabled"]
+TOTAL_TRIALS = int(st.secrets["total_trials"])
+MAX_MESSAGES = int(st.secrets["max_cached_messages"])
 
 class Locale:    
     ai_role_options: List[str]
@@ -174,7 +176,7 @@ zw = Locale(
     ai_role_options=AI_ROLE_OPTIONS_ZW,
     ai_role_prefix="You are an assistant",
     ai_role_postfix="Answer as concisely as possible.",
-    title="Gemini AI 回音室（测试）",
+    title="Gemini AI 回音室（测试版）",
     choose_language="选择界面语言",
     language="中文·",
     lang_code='zh-CN',
@@ -222,12 +224,9 @@ st.markdown(
         unsafe_allow_html=True,
 )
 
-# maximum messages remembered
-MAX_MESSAGES = 10
 sendmail = True
 
 current_user = "**new_chat**"
-
 BASE_PROMPT = "You are a helpful assistant who can answer or handle all my queries!"
 
 # system messages and/or context
@@ -514,13 +513,9 @@ def Delete_Files() -> None:
 def Model_Changed() -> None:
     Delete_Files()
     
-def Show_Images(placeholder, desc, img_url):
-
-	# msg = f"![{desc}]({img_url})"
-	# text.markdown(msg, unsafe_allow_html=True)
-
-    image = Image.open(img_url)
-    placeholder.image(image, caption=desc)
+def Show_Images(desc, images):
+    for image in images:
+        st.image(image, caption=desc)
 
 def Show_Messages(placeholder):
 
@@ -540,8 +535,6 @@ def Show_Messages(placeholder):
             alignment = "left"
 
         st.markdown(f"<div style='text-align: {alignment};'><b>{role}</b>:</div>", unsafe_allow_html=True)
-
-        #st.write(f"{role}:")
 
         #print(f"Show Message Parts: {message['parts']}")
 
@@ -563,15 +556,44 @@ def Show_Messages(placeholder):
             text = f"{message['parts']}"
             #st.write(text, unsafe_allow_html=True)
             st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
-                
-    # msg = str("\n\n".join(messages_str))
-    # st.write(msg, unsafe_allow_html=True)
 
+
+def Imagen_Creation(prompt, npics):
+    '''
+    '''
+    isOK = False
+    generated_images = []
+
+    #-- Using imagen-3.0-generate-002 Model ------
+    try:
+        response = st.session_state.client.models.generate_images(
+            model='imagen-3.0-generate-002',
+            contents = prompt,
+            config=genai.types.GenerateImagesConfig(number_of_images= npics,
+                                              output_mime_type="image/jpeg",
+                                              safety_filter_level= "BLOCK_ONLY_HIGH",
+                                              person_generation = "ALLOW_ADULT",
+                                                )
+            ) 
+
+        for generated_image in response.generated_images:
+            image = Image.open(BytesIO(generated_image.image.image_bytes))
+            st.image(image)
+            generated_images.append(image)
+            isOK = True
+    except Exception as e:
+        print(f"Imagen-3.0 model returned error! str({e})")
+
+    return isOK, generated_images    
 
 def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature: float = 0.7):
     '''
     '''    
     #print("DEBUG incoming contents:", contents)
+
+    if(len(contents) > MAX_MESSAGES+1):
+        contents.pop(1)
+        contents.pop(1)
 
     safety_settings = [
         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -610,7 +632,11 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
                 contents = contents,
                 config=genai.types.GenerateContentConfig(response_modalities=['Text'],
                                                          system_instruction=sys_prompt,
-                                                         temperature=temperature,)
+                                                         temperature=temperature,
+                                                         tools=[
+                                                             types.Tool(google_search=types.GoogleSearch())
+                                                        ],
+                                                        )
                 )
             
             # If the AI role is '汉语新解' or '诗词卡片', remove the code marks
@@ -750,7 +776,7 @@ def main(argv):
             #    st.session_state.clear_doc_button = st.button(label=st.session_state.locale.clear_doc_btn[0], key="clearDoc", on_click=Delete_Files)
 
         user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder[0], value=st.session_state.user_text, max_chars=8000, key="1")
-        send_button = st.button(st.session_state.locale.chat_run_btn[0], disabled=st.session_state.total_queries > TOTAL_TRIALS)
+        send_button = st.button(st.session_state.locale.chat_run_btn[0], disabled=st.session_state.out_quota)
         if send_button :
             parts = []
             print(f"{st.session_state.user}: {user_input}")
@@ -758,8 +784,22 @@ def main(argv):
                 prompt = user_input.strip()
                 prefixes = ["!!!", "！！！"]
                 if(prompt.startswith(tuple(prefixes))):
-                    st.markdown(f"画画暂时没有开放，请以后再试！", unsafe_allow_html=True)
-                    save_log(prompt, "画画暂时没有开放，请以后再试！", st.session_state.total_tokens)
+                    if (TEXT2IMG_ENABLES == "yes"): 
+                        #-- Using imagen-3.0-generate-002 Model ------
+                        prompt = " ".join(prompt.split()[1:])
+                        print(f"DEBUG: {prompt}")
+                        with st.spinner('Wait ...'):
+                            isOK, ret_images = Imagen_Creation(prompt, 2)
+                            if(isOK == True):
+                                st.session_state.total_tokens += 1500
+                                save_log(prompt, "image generated", st.session_state.total_tokens)
+                                Show_Images(prompt, ret_images)
+                            else:
+                                save_log(prompt, "画画失败。请等下再试！", st.session_state.total_tokens)
+                                st.markdown(f"画画失败。请等下再试！", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"画画暂时没有开放，请以后再试！", unsafe_allow_html=True)
+                        save_log(prompt, "画画暂时没有开放，请以后再试！", st.session_state.total_tokens)
                 else:
                     parts.append(prompt)
                     # if st.session_state.model_version == "Gemini 2.0 flash Exp":
@@ -824,6 +864,7 @@ def main(argv):
         st.markdown(f'<p class="tiny-font">{small_print}</p>', unsafe_allow_html=True)
 
         if st.session_state.user not in VALID_USERS and st.session_state.total_queries > TOTAL_TRIALS:
+            st.session_state.out_quota = True
             st.warning("# 你已经超过了今天的试用额度。请稍后再试！或联系管理员 tqye@yahoo.com 申请一个账号。")
 
 ##############################
@@ -899,6 +940,9 @@ if __name__ == "__main__":
 
     if 'total_queries' not in st.session_state:
         st.session_state.total_queries = 0
+
+    if 'out_quota' not in st.session_state:
+        st.session_state.out_quota = False
 
     #if (txt2img_enabled == True):
     #    pipe = get_sd_model_pipe(model_id)
