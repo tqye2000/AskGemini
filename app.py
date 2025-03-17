@@ -549,22 +549,22 @@ def Show_Messages(placeholder):
                 text = message['parts'][0]['text']
             else:
                 text = f"{message['parts'][0]}"
-            with st.align(alignment):
-                st.write(text, unsafe_allow_html=True)
-            #st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
+            #with st.align(alignment):
+            #    st.write(text, unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
         elif isinstance(message['parts'], dict):
             if "text" in message['parts']:
                 text = message['parts']['text']
-                with st.align(alignment):
-                    st.write(text, unsafe_allow_html=True)
-                #st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
+                #with st.align(alignment):
+                #    st.write(text, unsafe_allow_html=True)
+                st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
             if "image" in message['parts']:
                 st.image(message['parts']["image"])
         else:
             text = f"{message['parts']}"
-            with st.align(alignment):
-                st.write(text, unsafe_allow_html=True)
-            #st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
+            #with st.align(alignment):
+                #st.write(text, unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
 
 
 def Imagen_Creation(prompt, npics):
