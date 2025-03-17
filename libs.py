@@ -418,6 +418,11 @@ def GetContexts(uploaded_file):
                 temp.write(uploaded_file.getbuffer())
                 tempFile = temp.name
                 Content = encode_image(temp.name)
+        elif filepath.split(".")[-1] in ['webp', 'WEBP']:
+            with NamedTemporaryFile(suffix="webp", delete=False) as temp:
+                temp.write(uploaded_file.getbuffer())
+                tempFile = temp.name
+                Content = encode_image(temp.name)
         else:
             with NamedTemporaryFile(suffix="txt", delete=False) as temp:
                 temp.write(uploaded_file.getbuffer())

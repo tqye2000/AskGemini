@@ -199,7 +199,7 @@ zw = Locale(
     username_prompt="用户名/密码错误",
     password_prompt="请输入用户名和密码",
     choose_llm_prompt="请选择你想使用的AI模型",
-    support_message="如遇什么问题或有什么建议，反馈，请电 tqye@yahoo.com<br>使用其它模型<br><a href='https://askcrp.streamlit.app'>Command R+</a><br><a href='https://gptecho.streamlit.app'>OpenAI GPT-4o</a><br><a href='https://claudeecho.streamlit.app'>Claude</a><p> 其它小工具：<br><a href='https://imagicapp.streamlit.app'>照片增强，去背景等</a>",
+    support_message="如遇什么问题或有什么建议，反馈，请电 tqye@yahoo.com<br><br>使用其它模型<br><a href='https://askcrp.streamlit.app'>Command R+</a><br><a href='https://gptecho.streamlit.app'>OpenAI GPT-4o</a><br><a href='https://claudeecho.streamlit.app'>Claude</a><br><br>其它小工具：<br><a href='https://imagicapp.streamlit.app'>照片增强，去背景等</a>",
     select_placeholder2="选择AI的角色",
     stt_placeholder="播放",
     radio_placeholder="选择界面语言",
@@ -214,21 +214,6 @@ st.set_page_config(page_title="Echo Gemini AI",
                     'About': "# For Experiment Only. Nov-2023"}
     )
 
-st.markdown(
-    """
-        <style>
-                .appview-container .main .block-container {{
-                    padding-top: {padding_top}rem;
-                    padding-bottom: {padding_bottom}rem;
-                    }}
-
-                .sidebar .sidebar-content {{
-                    width: 40px;
-                }}
-
-        </style>""".format(padding_top=1, padding_bottom=1),
-        unsafe_allow_html=True,
-)
 
 sendmail = True
 
@@ -375,6 +360,7 @@ def send_mail(query, res, total_tokens):
     now = datetime.now() # current date and time
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
     message = f'[{date_time}] {st.session_state.user}:({st.session_state.user_ip}:: {st.session_state.user_location}):\n'
+    message += f'Model: {st.session_state.model_version}\n'
     message += f'[You]: {query}\n'
     if 'text' in res:
         generated_text = res["text"]
@@ -408,10 +394,12 @@ def send_mail(query, res, total_tokens):
 
     try:
         if "image" in res:
+            print("Attaching Image found!")
             # Open the image file in binary mode
             with BytesIO() as buffer:
-                res["image"].save(buffer, format="jpg")
-                img = MIMEImage(buffer.getvalue())       
+                imageFile = res["image"]
+                imageFile.save(buffer, format="JPEG")
+                img = MIMEImage(buffer.getbuffer())       
                 # Attach the image to the MIMEMultipart object
                 msg.attach(img)
     except Exception as e:
@@ -433,7 +421,7 @@ def Show_Audio_Player(ai_content: str) -> None:
     try:
         lang = detect(ai_content)
         print("Language:", lang)
-        if lang in ['zh', 'zh-cn', 'en', 'de', 'fr'] :
+        if lang in ['zh', 'zh-CN', 'en', 'de', 'fr'] :
             tts = gTTS(text=ai_content, lang=lang)
             #if st.session_state['locale'] is zw:
             #    tts = gTTS(text=ai_content, lang='zh')
@@ -517,6 +505,12 @@ def Delete_Files() -> None:
     st.rerun()
 
 def Model_Changed() -> None:
+    if "2.0 flash Exp" in st.session_state.model_version:
+        st.session_state.enable_search = False
+        st.session_state.search_disabled = True
+    else:
+        st.session_state.search_disabled = False
+
     Delete_Files()
     
 def Show_Images(desc, images):
@@ -611,7 +605,7 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
     tokens = 0
     ret_content = {}
     try:
-        if st.session_state.model_version == "Gemini 2.0 flash Exp":
+        if "2.0 flash Exp" in st.session_state.model_version:
             response = st.session_state.client.models.generate_content(
                 model = "models/gemini-2.0-flash-exp",
                 contents = contents,
@@ -699,23 +693,28 @@ def main(argv):
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
-                                                  options=("Gemini 2.0 Pro", "Gemini 2.0 flash Exp", "Gemini 2.0 think", "Gemini 2.0 flash",), on_change=Model_Changed)
-    if st.session_state.model_version == "Gemini 2.0 flash":
-        st.session_state.llm = "gemini-2.0-flash"
-    elif st.session_state.model_version == "Gemini 2.0 flash Exp":
+                                                  options=("Gemini 2.0 Pro （最强)", "Gemini 2.0 flash Exp （图文）", "Gemini 2.0 Think", "Gemini 2.0 flash",), on_change=Model_Changed)
+    if "2.0 Pro" in st.session_state.model_version:
+        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
+        st.session_state.search_disabled = False
+    elif "2.0 flash Exp" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.0-flash-exp"
         st.session_state.enable_search = False
-    elif st.session_state.model_version == "Gemini 2.0 flash think":
+        st.session_state.search_disabled = True
+    elif "2.0 flash Think" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.0-flash-thinking-exp"
-    elif st.session_state.model_version == "Gemini 2.0 Pro":
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
+        st.session_state.search_disabled = False
+    elif st.session_state.model_version == "Gemini 2.0 flash":
+        st.session_state.llm = "gemini-2.0-flash"
+        st.session_state.search_disabled = False
     else:
         st.session_state.llm = "gemini-2.0-pro-exp-02-05"
+        st.session_state.search_disabled = False
 
     st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
     st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label[0], min_value=0.1, max_value=2.0, value=0.7, step=0.05)
-    st.sidebar.markdown("注意：若接下来的话题与之前的不相关，请点击“新话题”按钮，以确保新话题不会受之前内容的影响，同时也有助于节省字符传输量。谢谢！")
-    st.sidebar.markdown(st.session_state.locale.support_message[0], unsafe_allow_html=True)
+    st.sidebar.markdown("<p class='tiny-font'>注意：若接下来的话题与之前的不相关，请点击“新话题”按钮，以确保新话题不会受之前内容的影响，同时也有助于节省字符传输量。谢谢！</p>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<p class='tiny-font'>{st.session_state.locale.support_message[0]}", unsafe_allow_html=True)
 
     sys_role_placeholder = st.write("AI的角色: **" + st.session_state["context_select" + current_user + "value"] + "**")
     tab_input, tab_context = st.tabs(
@@ -764,7 +763,7 @@ def main(argv):
             uploaded_file = st.file_uploader(label=st.session_state.locale.file_upload_label[0], type=['docx', 'txt', 'pdf', 'csv', 'jpg','jpeg', 'png', 'webp'], key=st.session_state.key, accept_multiple_files=False,)
             if uploaded_file is not None:
                 mime_type = uploaded_file.type
-                if uploaded_file.name.split(".")[-1] in ['jpeg', 'jpg', 'png']:
+                if uploaded_file.name.split(".")[-1] in ['jpeg', 'jpg', 'png', 'webp']:
                         pil_image = Image.open(uploaded_file)
                         st.session_state.loaded_image, ierror = libs.GetContexts(uploaded_file)
                         if ierror != 0:
@@ -781,12 +780,13 @@ def main(argv):
                         #print(f"The size of the document:  {len(st.session_state.loaded_content)}")
                         st.session_state.uploaded_filename_placeholder.write(f"{uploaded_file.name} ({doc_len})")
                         st.session_state.enable_search = False
+                        st.session_state.search_disabled = True
         with st.session_state.buttons_placeholder:
             c1, c2 = st.columns(2)
             with c1:
                 st.session_state.new_topic_button = st.button(label=st.session_state.locale.chat_clear_btn[0], key="newTopic", on_click=Clear_Chat)
             with c2:
-                st.session_state.enable_search = st.checkbox(label=st.session_state.locale.enable_search_label[0], value=st.session_state.enable_search)
+                st.session_state.enable_search = st.checkbox(label=st.session_state.locale.enable_search_label[0], disabled=st.session_state.search_disabled, value=st.session_state.enable_search)
 
         user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder[0], value=st.session_state.user_text, max_chars=8000, key="1")
         send_button = st.button(st.session_state.locale.chat_run_btn[0], disabled=st.session_state.out_quota)
@@ -814,6 +814,7 @@ def main(argv):
                         st.markdown(f"画画暂时没有开放，请以后再试！", unsafe_allow_html=True)
                         save_log(prompt, "画画暂时没有开放，请以后再试！", st.session_state.total_tokens)
                 else:
+                    print(f"I am using the model: {st.session_state.model_version}")
                     parts.append(prompt)
                     # if st.session_state.model_version == "Gemini 2.0 flash Exp":
                     #     parts.append(prompt)
@@ -830,7 +831,7 @@ def main(argv):
                     #print(f"DEBUG0: {st.session_state.messages}\n")
 
                     with st.spinner('Wait ...'):
-                        if st.session_state.model_version == "Gemini 2.0 flash Exp":
+                        if "2.0 flash Exp" in st.session_state.model_version:
                             st.session_state.contents += parts
                             #answer, tokens = Model_Completion(parts)
                             answer, tokens = Model_Completion(st.session_state.contents)
@@ -848,7 +849,7 @@ def main(argv):
                         else:
                             generated_text = "No text generated!"
 
-                        if st.session_state.model_version == "Gemini 2.0 flash Exp":
+                        if "2.0 flash Exp" in st.session_state.model_version:
                             st.session_state["messages"] += [{"role": "model", "parts": answer}]
                         else:
                             st.session_state["messages"] += [{"role": "model", "parts": [answer]}]
@@ -871,7 +872,7 @@ def main(argv):
 
         st.markdown("""
             <style>
-            .tiny-font {font-size:12px !important;}
+            .tiny-font {font-size:11px !important;}
             </style>
             """, unsafe_allow_html=True)
         st.markdown(f'<p class="tiny-font">{small_print}</p>', unsafe_allow_html=True)
@@ -932,6 +933,9 @@ if __name__ == "__main__":
     if "enable_search" not in st.session_state:
         st.session_state.enable_search = False
 
+    if "search_disabled" not in st.session_state:
+        st.session_state.search_disabled = False
+
     if 'total_tokens' not in st.session_state:
         st.session_state.total_tokens = 0
 
@@ -968,7 +972,7 @@ if __name__ == "__main__":
                         padding-bottom: {padding_bottom}rem;
                     }}
                     .sidebar .sidebar-content {{
-                        width: 200px;
+                        width: 180px;
                     }}
                     .st-emotion-cache-fis6aj {{
                         display: none;
