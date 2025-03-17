@@ -975,7 +975,7 @@ if __name__ == "__main__":
                         padding-bottom: {padding_bottom}rem;
                     }}
                     .sidebar .sidebar-content {{
-                        width: 180px;
+                        width: 160px;
                     }}
                     .st-emotion-cache-fis6aj {{
                         display: none;
