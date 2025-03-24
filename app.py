@@ -669,7 +669,7 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
 
     return ret_content, tokens
 
-@st.cache_data()
+#@st.cache_data()
 def Create_Client():
     '''
     '''
