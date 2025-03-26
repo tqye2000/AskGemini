@@ -5,7 +5,8 @@
 # When      | Who            | What
 # 19/12/2023| Tian-Qing Ye   | Created
 # 15/03/2025| Tian-Qing Ye   | Updated to support Gemini 2.0 flash Exp model
-# 2016/03/2025| Tian-Qing Ye | Further updated
+# 16/03/2025| Tian-Qing Ye   | Further updated
+# 26/03/2025| Tian-Qing Ye   | Add 2.5 Pro
 ############################################################################
 import streamlit as st
 from streamlit import runtime
@@ -696,7 +697,9 @@ def main(argv):
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
-                                                  options=("Gemini 2.0 Pro （最强)", "Gemini 2.0 flash Exp （图文）", "Gemini 2.0 Think", "Gemini 2.0 flash",), on_change=Model_Changed)
+                                                  options=("Gemini 2.0 Pro （最强)", 
+                                                           "Gemini 2.0 flash Exp （图文）", 
+                                                           "Gemini 2.5 Pro (推力与思考)", "Gemini 2.0 flash",), on_change=Model_Changed)
     if "2.0 Pro" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.0-pro-exp-02-05"
         st.session_state.search_disabled = False
@@ -704,14 +707,14 @@ def main(argv):
         st.session_state.llm = "gemini-2.0-flash-exp"
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
-    elif "2.0 flash Think" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.0-flash-thinking-exp"
+    elif "2.5 Pro" in st.session_state.model_version:
+        st.session_state.llm = "gemini-2.5-pro-exp-03-25"
         st.session_state.search_disabled = False
     elif st.session_state.model_version == "Gemini 2.0 flash":
         st.session_state.llm = "gemini-2.0-flash"
         st.session_state.search_disabled = False
     else:
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
+        st.session_state.llm = "gemini-2.5-pro-exp-03-25"
         st.session_state.search_disabled = False
 
     st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
