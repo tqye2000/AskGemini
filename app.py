@@ -697,18 +697,18 @@ def main(argv):
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
-                                                  options=("Gemini 2.0 Pro （最强)", 
-                                                           "Gemini 2.0 flash Exp （图文）", 
-                                                           "Gemini 2.5 Pro (推力与思考)", "Gemini 2.0 flash",), on_change=Model_Changed)
-    if "2.0 Pro" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
-        st.session_state.search_disabled = False
-    elif "2.0 flash Exp" in st.session_state.model_version:
+                                                  options=("Gemini 2.0 flash Exp （图文）", 
+                                                           "Gemini 2.5 Pro (最强大脑)", 
+                                                           "Gemini 2.0 Pro", "Gemini 2.0 flash",), on_change=Model_Changed)
+    if "2.0 flash Exp" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.0-flash-exp"
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
     elif "2.5 Pro" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.5-pro-exp-03-25"
+        st.session_state.search_disabled = False
+    elif "2.0 Pro" in st.session_state.model_version:
+        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
         st.session_state.search_disabled = False
     elif st.session_state.model_version == "Gemini 2.0 flash":
         st.session_state.llm = "gemini-2.0-flash"
