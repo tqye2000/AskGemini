@@ -865,12 +865,12 @@ def main(argv):
                     if send_mail:
                         send_mail(prompt, answer, st.session_state.total_tokens)
 
-        cost = 8*0.015 * st.session_state.total_tokens /1000
-        if st.session_state.user_id in ["wenli2000", "yezheng", "yayuan181"]:
-            small_print = f"你目前用掉 {st.session_state.total_tokens} 字符"
-        else:
-            #small_print = f"你目前用掉 {st.session_state.total_tokens} 字符 (约人民币{cost:.4f}元)"
-            small_print = f"你目前用掉 {st.session_state.total_tokens} 字符"
+        #cost = 8*0.015 * st.session_state.total_tokens /1000
+        #if st.session_state.user_id in ["wenli2000", "yezheng", "yayuan181"]:
+        #    small_print = f"你目前用掉 {st.session_state.total_tokens} 字符"
+        #else:
+        #    #small_print = f"你目前用掉 {st.session_state.total_tokens} 字符 (约人民币{cost:.4f}元)"
+        #    small_print = f"你目前用掉 {st.session_state.total_tokens} 字符"
 
         st.markdown("""
             <style>
