@@ -333,24 +333,20 @@ def save_log(query, res, total_tokens):
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
     remote_ip = get_remote_ip()
     app_folder = get_app_folder()
-    f = open(app_folder + "/gptGate.log", "a", encoding='utf-8',)
-    f.write(f'[{date_time}] {st.session_state.user}:({remote_ip}):\n')
-    f.write(f'[You]: {query}\n')
-    f.write(f'[GPT]: {res}\n')
-    f.write(f'[Tokens]: {total_tokens}\n')
-    f.write(f"User ip: {st.session_state.user_ip}")
-    f.write(f"User Geo: {st.session_state.user_location}")
-    f.write(100 * '-' + '\n\n')
-
-    # try:
-    #     if sendmail == True:
-    #         send_mail(query, res, total_tokens)
-    # except Exception as ex:
-    #     f.write(f'Sending mail failed {ex}\n')
-    #     pass
+    try:
+        f = open(app_folder + "/gptGate.log", "a", encoding='utf-8',)
+        f.write(f'[{date_time}] {st.session_state.user}:({remote_ip}):\n')
+        f.write(f'[You]: {query}\n')
+        f.write(f'[GPT]: {res}\n')
+        f.write(f'[Tokens]: {total_tokens}\n')
+        f.write(f"User ip: {st.session_state.user_ip}")
+        f.write(f"User Geo: {st.session_state.user_location}")
+        f.write(100 * '-' + '\n\n')
+        f.close()
+    except Exception as ex:
+        print(f"Exception: {ex}")
+        pass
         
-    f.close()
-
     print(f'[{date_time}]: {st.session_state.user}: {remote_ip}\n')
     print(res+'\n')
 
