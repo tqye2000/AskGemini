@@ -871,7 +871,7 @@ def main(argv):
         #else:
         #    #small_print = f"你目前用掉 {st.session_state.total_tokens} 字符 (约人民币{cost:.4f}元)"
         #    small_print = f"你目前用掉 {st.session_state.total_tokens} 字符"
-
+        small_print = f"你目前用掉 {st.session_state.total_tokens} 字符"
         st.markdown("""
             <style>
             .tiny-font {font-size:11px !important;}
