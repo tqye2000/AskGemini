@@ -331,7 +331,7 @@ def save_log(query, res, total_tokens):
     '''
     now = datetime.now() # current date and time
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-    remote_ip = get_remote_ip()
+    remote_ip = get_client_ip()
     app_folder = get_app_folder()
     try:
         f = open(app_folder + "/gptGate.log", "a", encoding='utf-8',)
@@ -693,7 +693,7 @@ def main(argv):
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
-                                                  options=("Gemini 2.0 flash Exp （图文）", 
+                                                  options=("Gemini 2.0 flash Exp （图，文）", 
                                                            "Gemini 2.5 Pro (最强大脑)", 
                                                            "Gemini 2.0 Pro", "Gemini 2.0 flash",), on_change=Model_Changed)
     if "2.0 flash Exp" in st.session_state.model_version:
