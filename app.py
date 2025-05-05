@@ -852,9 +852,9 @@ def main(argv):
                             generated_text = "No text generated!"
 
                         if "2.0 flash Exp" in st.session_state.model_version:
-                            st.session_state["messages"] += [{"role": "model", "parts": answer}]
+                            st.session_state.messages += [{"role": "model", "parts": answer}]
                         else:
-                            st.session_state["messages"] += [{"role": "model", "parts": [answer]}]
+                            st.session_state.messages += [{"role": "model", "parts": [answer]}]
 
                     #print(f"DEBUG2: {st.session_state.messages}")
 
