@@ -7,6 +7,7 @@
 # 15/03/2025| Tian-Qing Ye   | Updated to support Gemini 2.0 flash Exp model
 # 16/03/2025| Tian-Qing Ye   | Further updated
 # 26/03/2025| Tian-Qing Ye   | Add 2.5 Pro
+# 19/11/2025| Tian-Qing Ye   | Add 3.0 Pro
 ############################################################################
 import streamlit as st
 from streamlit import runtime
