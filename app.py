@@ -687,30 +687,36 @@ def main(argv):
     #st.header(st.session_state.locale.title[0])
     Main_Title(st.session_state.locale.title[0])
     st.markdown(f"Hello {st.session_state.user}", unsafe_allow_html=True)
-    st.session_state.user_ip = get_client_ip()
-    st.session_state.user_location = get_geolocation(st.session_state.user_ip)
+    try:
+        st.session_state.user_ip = get_client_ip()
+        st.session_state.user_location = get_geolocation(st.session_state.user_ip)
+    except Exception as ex:
+        st.session_state.user_ip = "unknown_ip"
+        st.session_state.user_location = "unknown_location"
+        print(f"Exception getting user ip/location: {ex}")
 
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
                                                   options=("Gemini 2.0 flash Exp （图，文）", 
+                                                           "Gemini 3.0 Pro (最强大脑)",
                                                            "Gemini 2.5 Pro (最强大脑)", 
-                                                           "Gemini 2.0 Pro", "Gemini 2.0 flash",), on_change=Model_Changed)
+                                                           "Gemini 2.5 flash",), on_change=Model_Changed)
     if "2.0 flash Exp" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.0-flash-exp"
+        st.session_state.llm = "gemini-2.0-flash"
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
+    elif "3.0 Pro" in st.session_state.model_version:
+        st.session_state.llm = "gemini-3-pro-preview"
+        st.session_state.search_disabled = False
     elif "2.5 Pro" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.5-pro-exp-03-25"
+        st.session_state.llm = "ggemini-2.5-pro"
         st.session_state.search_disabled = False
-    elif "2.0 Pro" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.0-pro-exp-02-05"
-        st.session_state.search_disabled = False
-    elif st.session_state.model_version == "Gemini 2.0 flash":
-        st.session_state.llm = "gemini-2.0-flash"
+    elif st.session_state.model_version == "Gemini 2.5 flash":
+        st.session_state.llm = "gemini-2.5-flash"
         st.session_state.search_disabled = False
     else:
-        st.session_state.llm = "gemini-2.5-pro-exp-03-25"
+        st.session_state.llm = "gemini-2.5-pro"
         st.session_state.search_disabled = False
 
     st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
@@ -862,7 +868,7 @@ def main(argv):
                     Show_Messages(st.session_state.chats_placeholder)
 
                     save_log(prompt, generated_text, st.session_state.total_tokens)
-                    if send_mail:
+                    if sendmail:
                         send_mail(prompt, answer, st.session_state.total_tokens)
 
         #cost = 8*0.015 * st.session_state.total_tokens /1000
