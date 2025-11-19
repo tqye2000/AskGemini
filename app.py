@@ -324,7 +324,6 @@ def get_app_folder():
 
     return app_folder
 
-@st.cache_data(show_spinner=False)
 def save_log(query, res, total_tokens):
     '''
     Log an event or error
@@ -698,9 +697,9 @@ def main(argv):
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
-                                                  options=("Gemini 2.0 flash Exp （图，文）", 
-                                                           "Gemini 3.0 Pro (最强大脑)",
-                                                           "Gemini 2.5 Pro (最强大脑)", 
+                                                  options=("Gemini 3.0 Pro (最强大脑)",
+                                                           "Gemini 2.0 flash Exp （图，文）", 
+                                                           "Gemini 2.5 Pro", 
                                                            "Gemini 2.5 flash",), on_change=Model_Changed)
     if "2.0 flash Exp" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.0-flash"
