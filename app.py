@@ -7,7 +7,7 @@
 # 15/03/2025| Tian-Qing Ye   | Updated to support Gemini 2.0 flash Exp model
 # 16/03/2025| Tian-Qing Ye   | Further updated
 # 26/03/2025| Tian-Qing Ye   | Add 2.5 Pro
-# 19/11/2025| Tian-Qing Ye   | Add 3.0 Pro
+# 19/11/2025| Tian-Qing Ye   | Add 3.0 Pro and 2.5 image model support
 ############################################################################
 import streamlit as st
 from streamlit import runtime
@@ -353,58 +353,81 @@ def save_log(query, res, total_tokens):
 #@st.cache_data(show_spinner=False)
 def send_mail(query, res, total_tokens):
     '''
+    Robust send_mail: timeout, STARTTLS + fallback to SSL, exception handling so UI won't crash.
     '''
     now = datetime.now() # current date and time
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
     message = f'[{date_time}] {st.session_state.user}:({st.session_state.user_ip}:: {st.session_state.user_location}):\n'
     message += f'Model: {st.session_state.model_version}\n'
     message += f'[You]: {query}\n'
-    if 'text' in res:
+    if isinstance(res, dict) and 'text' in res:
         generated_text = res["text"]
     else:
         generated_text = "No text generated!"
-
     message += f'[Gemini]: {generated_text}\n'
     message += f'[Tokens]: {total_tokens}\n'
 
-    # Set up the SMTP server and log into your account
-    smtp_server = "smtp.gmail.com"
-    port = 587
-    # sender_email = "your_email@gmail.com"
-    # password = "your_password"
-    sender_email = st.secrets["gmail_user"]
-    password = st.secrets["gmail_passwd"]
+    smtp_server = st.secrets.get("smtp_server", "smtp.gmail.com")
+    port = int(st.secrets.get("smtp_port", 587))
+    sender_email = st.secrets.get("gmail_user")
+    password = st.secrets.get("gmail_passwd")
+    receive = st.secrets.get("receive_mail")
 
-    server = smtplib.SMTP(smtp_server, port)
-    server.starttls()
-    server.login(sender_email, password)
+    if not (smtp_server and sender_email and password and receive):
+        print("Email not sent: SMTP credentials or destination missing in secrets.")
+        return
 
-    # Create the MIMEMultipart message object and load it with appropriate headers for From, To, and Subject fields
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = st.secrets["receive_mail"]
-    msg['Subject'] = f"Chat from {st.session_state.user}"
-
-    # Add your message body
-    body = message
-    msg.attach(MIMEText(body, 'plain'))
+    server = None
+    timeout = 10  # seconds
 
     try:
-        if "image" in res:
-            print("Attaching Image found!")
-            # Open the image file in binary mode
-            with BytesIO() as buffer:
-                imageFile = res["image"]
-                imageFile.save(buffer, format="JPEG")
-                img = MIMEImage(buffer.getbuffer())       
-                # Attach the image to the MIMEMultipart object
-                msg.attach(img)
-    except Exception as e:
-        print(f"Error: {str(e)}", 0)
+        # Try STARTTLS (typical for port 587)
+        try:
+            server = smtplib.SMTP(smtp_server, port, timeout=timeout)
+            server.ehlo()
+            if port == 587:
+                server.starttls()
+                server.ehlo()
+            server.login(sender_email, password)
+        except Exception as e1:
+            # Fallback to SSL on 465
+            print(f"STARTTLS failed: {e1!r} — trying SSL fallback")
+            try:
+                server = smtplib.SMTP_SSL(smtp_server, 465, timeout=timeout)
+                server.login(sender_email, password)
+            except Exception as e2:
+                print(f"SMTP_SSL fallback failed: {e2!r}")
+                return
 
-    # Send the message using the SMTP server object
-    server.send_message(msg)
-    server.quit()
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = receive
+        msg['Subject'] = f"Gemini chat from {st.session_state.user}"
+        msg.attach(MIMEText(message, 'plain'))
+
+        # Attach image if present (non-blocking)
+        try:
+            if isinstance(res, dict) and "image" in res:
+                with BytesIO() as buffer:
+                    imageFile = res["image"]
+                    imageFile.save(buffer, format="JPEG")
+                    img = MIMEImage(buffer.getvalue())
+                    msg.attach(img)
+        except Exception as attach_ex:
+            print(f"Failed to attach image: {attach_ex}")
+
+        server.send_message(msg)
+        print("Email sent ok.")
+    except Exception as ex:
+        # Do not let email errors crash the app; log and continue
+        print(f"send_mail error: {ex!r}")
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
 
 def Display_Uploaded_Image(img_str:str):
     buffer = BytesIO()
@@ -502,7 +525,7 @@ def Delete_Files() -> None:
     st.rerun()
 
 def Model_Changed() -> None:
-    if "2.0 flash Exp" in st.session_state.model_version:
+    if "2.0 flash" in st.session_state.model_version or "2.5 image" in st.session_state.model_version:
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
     else:
@@ -567,12 +590,11 @@ def Imagen_Creation(prompt, npics):
     #-- Using imagen-3.0-generate-002 Model ------
     try:
         response = st.session_state.client.models.generate_images(
-            model='imagen-3.0-generate-002',
-            contents = prompt,
+            model='imagen-4.0-generate-001', #'imagen-3.0-generate-002',
+            prompt = prompt,
             config=genai.types.GenerateImagesConfig(number_of_images= npics,
                                               output_mime_type="image/jpeg",
-                                              safety_filter_level= "BLOCK_ONLY_HIGH",
-                                              person_generation = "ALLOW_ADULT",
+                                              personGeneration = "allow_adult",
                                                 )
             ) 
 
@@ -582,7 +604,7 @@ def Imagen_Creation(prompt, npics):
             generated_images.append(image)
             isOK = True
     except Exception as e:
-        print(f"Imagen-3.0 model returned error! str({e})")
+        print(f"Imagen-4.0 model returned error! str({e})")
 
     return isOK, generated_images    
 
@@ -605,7 +627,28 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
     tokens = 0
     ret_content = {}
     try:
-        if "2.0 flash Exp" in st.session_state.model_version:
+        if "2.5 image" in st.session_state.model_version:
+            response = st.session_state.client.models.generate_content(
+                model = "gemini-2.5-flash-image",
+                contents = contents,
+                config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'],
+                                                         safety_settings=safety_settings,
+                                                         )
+                )
+
+            for part in response.parts:
+                if part.text is not None:
+                    print(part.text)
+                    ret_content["text"] = part.text
+                    #st.write(part.text)
+                    st.session_state["contents"].append(part.text)
+                elif part.inline_data is not None:
+                    image = Image.open(BytesIO(part.inline_data.data))
+                    #image.save("generated_image.png")
+                    st.image(image)
+                    ret_content["image"] = image
+                    st.session_state["contents"].append(image)
+        elif "2.0 flash" in st.session_state.model_version:
             response = st.session_state.client.models.generate_content(
                 model = "models/gemini-2.0-flash-exp",
                 contents = contents,
@@ -698,11 +741,13 @@ def main(argv):
     st.session_state.client = Create_Client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
-                                                  options=("Gemini 3.0 Pro (最强大脑)",
-                                                           "Gemini 2.0 flash Exp （图，文）", 
+                                                  options=("Gemini 2.5 flash", 
                                                            "Gemini 2.5 Pro", 
-                                                           "Gemini 2.5 flash",), on_change=Model_Changed)
-    if "2.0 flash Exp" in st.session_state.model_version:
+                                                           "Gemini 3.0 Pro (最强大脑)",
+                                                           "Gemini 2.5 image",
+                                                           "Gemini 2.0 flash",
+                                                           ), on_change=Model_Changed)
+    if "2.0 flash" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.0-flash"
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
@@ -712,8 +757,11 @@ def main(argv):
     elif "2.5 Pro" in st.session_state.model_version:
         st.session_state.llm = "ggemini-2.5-pro"
         st.session_state.search_disabled = False
-    elif st.session_state.model_version == "Gemini 2.5 flash":
+    elif "2.5 flash" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.5-flash"
+        st.session_state.search_disabled = False
+    elif "2.5 image" in st.session_state.model_version:
+        st.session_state.llm = "gemini-2.5-flash-image"
         st.session_state.search_disabled = False
     else:
         st.session_state.llm = "gemini-2.5-pro"
@@ -824,10 +872,6 @@ def main(argv):
                 else:
                     print(f"I am using the model: {st.session_state.model_version}")
                     parts.append(prompt)
-                    # if st.session_state.model_version == "Gemini 2.0 flash Exp":
-                    #     parts.append(prompt)
-                    # else: 
-                    #     parts.append({"text": prompt})
                     if st.session_state.loaded_content.strip() != "":
                         print("Context supplied!")
                         parts.append(st.session_state.loaded_content.strip())
@@ -839,9 +883,8 @@ def main(argv):
                     #print(f"DEBUG0: {st.session_state.messages}\n")
 
                     with st.spinner('Wait ...'):
-                        if "2.0 flash Exp" in st.session_state.model_version:
+                        if "2.0 flash" in st.session_state.model_version or "2.5 image" in st.session_state.model_version:
                             st.session_state.contents += parts
-                            #answer, tokens = Model_Completion(parts)
                             answer, tokens = Model_Completion(st.session_state.contents)
                         else:
                             st.session_state.contents += parts
@@ -857,7 +900,7 @@ def main(argv):
                         else:
                             generated_text = "No text generated!"
 
-                        if "2.0 flash Exp" in st.session_state.model_version:
+                        if "2.0 flash" in st.session_state.model_version:
                             st.session_state["messages"] += [{"role": "model", "parts": answer}]
                         else:
                             st.session_state["messages"] += [{"role": "model", "parts": [answer]}]
@@ -918,7 +961,7 @@ if __name__ == "__main__":
         st.session_state['locale'] = zw
 
     if "model_version" not in st.session_state:
-        st.session_state.model_version = "Gemini 2.0 flash"
+        st.session_state.model_version = "Gemini 2.5 flash"
 
     if "temperature" not in st.session_state:
         st.session_state.temperature = 0.7
