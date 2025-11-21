@@ -525,7 +525,7 @@ def Delete_Files() -> None:
     st.rerun()
 
 def Model_Changed() -> None:
-    if "2.0 flash" in st.session_state.model_version or "2.5 image" in st.session_state.model_version:
+    if "2.0 flash" in st.session_state.model_version or "2.5 image" in st.session_state.model_version or "3 Pro image" in st.session_state.model_version:
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
     else:
@@ -627,9 +627,10 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
     tokens = 0
     ret_content = {}
     try:
-        if "2.5 image" in st.session_state.model_version:
+        if "2.5 image" in st.session_state.model_version or "3 Pro image" in st.session_state.model_version:
             response = st.session_state.client.models.generate_content(
-                model = "gemini-2.5-flash-image",
+                #model = "gemini-2.5-flash-image",
+                model = st.session_state.llm,
                 contents = contents,
                 config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'],
                                                          safety_settings=safety_settings,
@@ -745,6 +746,7 @@ def main(argv):
                                                            "Gemini 2.5 Pro", 
                                                            "Gemini 3.0 Pro (最强大脑)",
                                                            "Gemini 2.5 image",
+                                                           "Gemini 3 Pro image",
                                                            "Gemini 2.0 flash",
                                                            ), on_change=Model_Changed)
     if "2.0 flash" in st.session_state.model_version:
@@ -762,6 +764,9 @@ def main(argv):
         st.session_state.search_disabled = False
     elif "2.5 image" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.5-flash-image"
+        st.session_state.search_disabled = False
+    elif "3 Pro image" in st.session_state.model_version:
+        st.session_state.llm = "gemini-3-pro-image-preview"
         st.session_state.search_disabled = False
     else:
         st.session_state.llm = "gemini-2.5-pro"
