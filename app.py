@@ -335,15 +335,14 @@ def save_log(query, res, total_tokens):
     remote_ip = get_client_ip()
     app_folder = get_app_folder()
     try:
-        f = open(app_folder + "/gptGate.log", "a", encoding='utf-8',)
-        f.write(f'[{date_time}] {st.session_state.user}:({remote_ip}):\n')
-        f.write(f'[You]: {query}\n')
-        f.write(f'[GPT]: {res}\n')
-        f.write(f'[Tokens]: {total_tokens}\n')
-        f.write(f"User ip: {st.session_state.user_ip}")
-        f.write(f"User Geo: {st.session_state.user_location}")
-        f.write(100 * '-' + '\n\n')
-        f.close()
+        with open(app_folder + "/gptGate.log", "a", encoding='utf-8') as f:
+            f.write(f'[{date_time}] {st.session_state.user}:({remote_ip}):\n')
+            f.write(f'[You]: {query}\n')
+            f.write(f'[GPT]: {res}\n')
+            f.write(f'[Tokens]: {total_tokens}\n')
+            f.write(f"User ip: {st.session_state.user_ip}")
+            f.write(f"User Geo: {st.session_state.user_location}")
+            f.write(100 * '-' + '\n\n')
     except Exception as ex:
         print(f"Exception: {ex}")
         pass
