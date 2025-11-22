@@ -976,8 +976,10 @@ if __name__ == "__main__":
 
     # Create a input box for inviting user to enter their given name
     if st.session_state.user == "" or st.session_state.user is None:
-        st.write("欢迎来到Gemini AI 回音室！")
+        st.markdown("<h2 style='margin-bottom:0.5em;'>欢迎来到Gemini AI 回音室！</h2>", unsafe_allow_html=True)
+        st.markdown("&nbsp;")  # Add vertical space
         st.session_state.user = st.text_input(label="请输入你的ID：", value="", max_chars=20)
+        st.info("如需申请ID，请联系 tqye@yahoo.com")
         if st.session_state.user != None and st.session_state.user != "" and st.session_state.user != "invalid":
             current_user = st.session_state.user
             if "context_select" + current_user + "value" not in st.session_state:
