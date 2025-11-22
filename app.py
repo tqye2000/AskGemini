@@ -102,33 +102,33 @@ class Locale:
                 radio_text1,
                 radio_text2,                
                 ):
-        self.ai_role_options = ai_role_options, 
-        self.ai_role_prefix= ai_role_prefix,
-        self.ai_role_postfix= ai_role_postfix,
-        self.title= title,
-        self.choose_language = choose_language,
-        self.language= language,
-        self.lang_code= lang_code,
-        self.chat_placeholder= chat_placeholder,
-        self.chat_messages = chat_messages,
-        self.chat_run_btn= chat_run_btn,
-        self.chat_clear_btn= chat_clear_btn,
-        self.clear_doc_btn = clear_doc_btn,
-        self.enable_search_label = enable_search_label,
-        self.chat_save_btn= chat_save_btn,
-        self.file_upload_label = file_upload_label,
-        self.temperature_label = temperature_label,
-        self.login_prompt= login_prompt,
-        self.logout_prompt= logout_prompt,
-        self.username_prompt= username_prompt,
-        self.password_prompt= password_prompt,
-        self.choose_llm_prompt = choose_llm_prompt,
-        self.support_message = support_message,
-        self.select_placeholder2= select_placeholder2,
-        self.stt_placeholder = stt_placeholder,
-        self.radio_placeholder= radio_placeholder,
-        self.radio_text1= radio_text1,
-        self.radio_text2= radio_text2,
+        self.ai_role_options = ai_role_options
+        self.ai_role_prefix = ai_role_prefix
+        self.ai_role_postfix = ai_role_postfix
+        self.title = title
+        self.choose_language = choose_language
+        self.language = language
+        self.lang_code = lang_code
+        self.chat_placeholder = chat_placeholder
+        self.chat_messages = chat_messages
+        self.chat_run_btn = chat_run_btn
+        self.chat_clear_btn = chat_clear_btn
+        self.clear_doc_btn = clear_doc_btn
+        self.enable_search_label = enable_search_label
+        self.chat_save_btn = chat_save_btn
+        self.file_upload_label = file_upload_label
+        self.temperature_label = temperature_label
+        self.login_prompt = login_prompt
+        self.logout_prompt = logout_prompt
+        self.username_prompt = username_prompt
+        self.password_prompt = password_prompt
+        self.choose_llm_prompt = choose_llm_prompt
+        self.support_message = support_message
+        self.select_placeholder2 = select_placeholder2
+        self.stt_placeholder = stt_placeholder
+        self.radio_placeholder = radio_placeholder
+        self.radio_text1 = radio_text1
+        self.radio_text2 = radio_text2
 
 
 AI_ROLE_OPTIONS_EN = [
@@ -284,7 +284,7 @@ def get_geolocation(ip_address):
         data = response.json()
 
         location = {
-            "city" : data.get("city)"),
+            "city" : data.get("city"),
             "region" : data.get("region"),
             "country" : data.get("country_name"),
             }
@@ -470,7 +470,7 @@ def Login() -> str:
         config['cookie']['expiry_days']
     )
     
-    fields = {'Form name':st.session_state.locale.login_prompt[0], 'Username':'Username', 'Password':'Password', 'Login':st.session_state.locale.login_prompt[0], 'Captcha':'Captcha'}
+    fields = {'Form name':st.session_state.locale.login_prompt, 'Username':'Username', 'Password':'Password', 'Login':st.session_state.locale.login_prompt, 'Captcha':'Captcha'}
     
     try:
         authenticator.login(location='main', fields=fields)
@@ -488,14 +488,14 @@ def Login() -> str:
             #st.title('Some content')
         elif st.session_state['authentication_status'] is False:
             #st.error('Username/password is incorrect')
-            st.error(st.session_state.locale.username_prompt[0])
+            st.error(st.session_state.locale.username_prompt)
             st.warning("如果您想使用该服务，请联系管理员（tqye@yahoo.com)申请一个账号！")
         elif st.session_state['authentication_status'] is None:
             #st.warning('Please enter your username and password')
-            st.warning(st.session_state.locale.password_prompt[0])
+            st.warning(st.session_state.locale.password_prompt)
             st.warning("如果您想使用该服务，请联系管理员（tqye@yahoo.com)申请一个账号！")                                                                                                                 
         else:
-            st.warning(st.session_state.locale.password_prompt[0])
+            st.warning(st.session_state.locale.password_prompt)
             st.warning("如果您想使用该服务，请联系管理员（tqye@yahoo.com)申请一个账号！")    
     except Exception as e:
         st.error(e)
@@ -729,8 +729,8 @@ def Main_Title(text: str) -> None:
 def main(argv):
 
     ## ----- Start --------
-    #st.header(st.session_state.locale.title[0])
-    Main_Title(st.session_state.locale.title[0])
+    #st.header(st.session_state.locale.title)
+    Main_Title(st.session_state.locale.title)
     st.markdown(f"Hello {st.session_state.user}", unsafe_allow_html=True)
     try:
         st.session_state.user_ip = get_client_ip()
@@ -742,7 +742,7 @@ def main(argv):
 
     st.session_state.client = Create_Client()
     
-    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt[0], 
+    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt, 
                                                   options=("Gemini 2.5 flash", 
                                                            "Gemini 2.5 Pro", 
                                                            "Gemini 3.0 Pro (最强大脑)",
@@ -773,10 +773,10 @@ def main(argv):
         st.session_state.llm = "gemini-2.5-pro"
         st.session_state.search_disabled = False
 
-    st.sidebar.button(st.session_state.locale.chat_clear_btn[0], on_click=Clear_Chat)
-    st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label[0], min_value=0.1, max_value=2.0, value=0.7, step=0.05)
+    st.sidebar.button(st.session_state.locale.chat_clear_btn, on_click=Clear_Chat)
+    st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label, min_value=0.1, max_value=2.0, value=0.7, step=0.05)
     st.sidebar.markdown("<p class='tiny-font'>注意：若接下来的话题与之前的不相关，请点击“新话题”按钮，以确保新话题不会受之前内容的影响，同时也有助于节省字符传输量。谢谢！</p>", unsafe_allow_html=True)
-    st.sidebar.markdown(f"<p class='tiny-font'>{st.session_state.locale.support_message[0]}", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<p class='tiny-font'>{st.session_state.locale.support_message}", unsafe_allow_html=True)
 
     sys_role_placeholder = st.write("AI的角色: **" + st.session_state["context_select" + current_user + "value"] + "**")
     tab_input, tab_context = st.tabs(
@@ -822,7 +822,7 @@ def main(argv):
         pil_image = None
 
         with st.session_state.uploading_file_placeholder:
-            uploaded_file = st.file_uploader(label=st.session_state.locale.file_upload_label[0], type=['docx', 'txt', 'pdf', 'csv', 'jpg','jpeg', 'png', 'webp'], key=st.session_state.key, accept_multiple_files=False,)
+            uploaded_file = st.file_uploader(label=st.session_state.locale.file_upload_label, type=['docx', 'txt', 'pdf', 'csv', 'jpg','jpeg', 'png', 'webp'], key=st.session_state.key, accept_multiple_files=False,)
             if uploaded_file is not None:
                 mime_type = uploaded_file.type
                 if uploaded_file.name.split(".")[-1] in ['jpeg', 'jpg', 'png', 'webp']:
@@ -846,12 +846,12 @@ def main(argv):
         with st.session_state.buttons_placeholder:
             c1, c2 = st.columns(2)
             with c1:
-                st.session_state.new_topic_button = st.button(label=st.session_state.locale.chat_clear_btn[0], key="newTopic", on_click=Clear_Chat)
+                st.session_state.new_topic_button = st.button(label=st.session_state.locale.chat_clear_btn, key="newTopic", on_click=Clear_Chat)
             with c2:
-                st.session_state.enable_search = st.checkbox(label=st.session_state.locale.enable_search_label[0], disabled=st.session_state.search_disabled, value=st.session_state.enable_search)
+                st.session_state.enable_search = st.checkbox(label=st.session_state.locale.enable_search_label, disabled=st.session_state.search_disabled, value=st.session_state.enable_search)
 
-        user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder[0], value=st.session_state.user_text, max_chars=8000, key="1")
-        send_button = st.button(st.session_state.locale.chat_run_btn[0], disabled=st.session_state.out_quota)
+        user_input = st.session_state.input_placeholder.text_area(label=st.session_state.locale.chat_placeholder, value=st.session_state.user_text, max_chars=8000, key="1")
+        send_button = st.button(st.session_state.locale.chat_run_btn, disabled=st.session_state.out_quota)
         if send_button :
             parts = []
             print(f"{st.session_state.user}: {user_input}")
@@ -960,11 +960,8 @@ if __name__ == "__main__":
         except:
             st.session_state.user_id = get_geolocation(st.session_state.user_ip)
 
-    if "user_loacation" not in st.session_state:
+    if "user_location" not in st.session_state:
         st.session_state.user_location = None
-
-    if "locale" not in st.session_state:
-        st.session_state['locale'] = zw
 
     if "model_version" not in st.session_state:
         st.session_state.model_version = "Gemini 2.5 flash"
@@ -1077,4 +1074,3 @@ if __name__ == "__main__":
         main(sys.argv)
 
 
-    
