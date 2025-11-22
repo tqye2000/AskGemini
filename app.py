@@ -8,20 +8,25 @@
 # 16/03/2025| Tian-Qing Ye   | Further updated
 # 26/03/2025| Tian-Qing Ye   | Add 2.5 Pro
 # 19/11/2025| Tian-Qing Ye   | Add 3.0 Pro and image models support
+# 22/11/2025| Tian-Qing Ye   | Refactor and cleanup
 ############################################################################
+
+# Standard library imports
+import os
+import sys
+from datetime import datetime
+from typing import List
+import random
+import string
+from base64 import b64decode
+
+# Third-party imports
 import streamlit as st
 from streamlit import runtime
 from streamlit.runtime.scriptrunner import get_script_run_ctx
 from streamlit_javascript import st_javascript
 import streamlit_authenticator as stauth
 import requests
-
-import os
-import sys
-from datetime import datetime
-from typing import List
-import random, string
-from base64 import b64decode
 import yaml
 from yaml.loader import SafeLoader
 from PIL import Image
@@ -29,13 +34,9 @@ from io import BytesIO
 from gtts import gTTS, gTTSError
 from langdetect import detect
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-
+# Local imports
 import libs
-
+from email_utils import send_mail
 from google import genai
 from google.genai import types
 
@@ -226,7 +227,7 @@ BASE_PROMPT = "You are a helpful assistant who can answer or handle all my queri
 set_context_all = {"不预设（通用）": ""}
 set_context_all.update(libs.set_sys_context)
 
-def get_remote_ip() -> str:
+def get_remote_ip() -> str | None:
     """Get remote ip."""
 
     try:
@@ -243,7 +244,7 @@ def get_remote_ip() -> str:
     return session_info.request.remote_ip
 
 
-def get_client_ip():
+def get_client_ip() -> str:
     '''
     workaround solution, via 'https://api.ipify.org?format=json' for get client ip
     example:
@@ -269,8 +270,8 @@ def get_client_ip():
         
     return ip_address
 
-@st.cache_data()
-def get_geolocation(ip_address):
+@st.cache_data(show_spinner=False)
+def get_geolocation(ip_address: str) -> dict | None:
     #reader = geolite2.reader()
     #location = reader.get(ip_address)
     #geolite2.close()
@@ -294,11 +295,11 @@ def get_geolocation(ip_address):
         return None
 
 
-def randomword(length):
+def randomword(length: int) -> str:
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
         
-def role_change_callback(arg):
+def role_change_callback(arg: str) -> None:
     try:
         st.session_state[arg + current_user + "value"] = st.session_state[arg + current_user]
 
@@ -319,14 +320,14 @@ def role_change_callback(arg):
         st.session_state.sys_prompt = BASE_PROMPT
 
 
-@st.cache_data()
-def get_app_folder():
+@st.cache_data(show_spinner=False)
+def get_app_folder() -> str:
     app_folder = os.path.dirname(__file__)
 
     return app_folder
 
 #@st.cache_data(show_spinner=False)
-def save_log(query, res, total_tokens):
+def save_log(query: str, res: str, total_tokens: int) -> None:
     '''
     Log an event or error
     '''
@@ -350,86 +351,8 @@ def save_log(query, res, total_tokens):
     print(f'[{date_time}]: {st.session_state.user}: {remote_ip}\n')
     print(res+'\n')
 
-#@st.cache_data(show_spinner=False)
-def send_mail(query, res, total_tokens):
-    '''
-    Robust send_mail: timeout, STARTTLS + fallback to SSL, exception handling so UI won't crash.
-    '''
-    now = datetime.now() # current date and time
-    date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-    message = f'[{date_time}] {st.session_state.user}:({st.session_state.user_ip}:: {st.session_state.user_location}):\n'
-    message += f'Model: {st.session_state.model_version}\n'
-    message += f'[You]: {query}\n'
-    if isinstance(res, dict) and 'text' in res:
-        generated_text = res["text"]
-    else:
-        generated_text = "No text generated!"
-    message += f'[Gemini]: {generated_text}\n'
-    message += f'[Tokens]: {total_tokens}\n'
 
-    smtp_server = st.secrets.get("smtp_server", "smtp.gmail.com")
-    port = int(st.secrets.get("smtp_port", 587))
-    sender_email = st.secrets.get("gmail_user")
-    password = st.secrets.get("gmail_passwd")
-    receive = st.secrets.get("receive_mail")
-
-    if not (smtp_server and sender_email and password and receive):
-        print("Email not sent: SMTP credentials or destination missing in secrets.")
-        return
-
-    server = None
-    timeout = 10  # seconds
-
-    try:
-        # Try STARTTLS (typical for port 587)
-        try:
-            server = smtplib.SMTP(smtp_server, port, timeout=timeout)
-            server.ehlo()
-            if port == 587:
-                server.starttls()
-                server.ehlo()
-            server.login(sender_email, password)
-        except Exception as e1:
-            # Fallback to SSL on 465
-            print(f"STARTTLS failed: {e1!r} — trying SSL fallback")
-            try:
-                server = smtplib.SMTP_SSL(smtp_server, 465, timeout=timeout)
-                server.login(sender_email, password)
-            except Exception as e2:
-                print(f"SMTP_SSL fallback failed: {e2!r}")
-                return
-
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = receive
-        msg['Subject'] = f"Gemini chat from {st.session_state.user}"
-        msg.attach(MIMEText(message, 'plain'))
-
-        # Attach image if present (non-blocking)
-        try:
-            if isinstance(res, dict) and "image" in res:
-                with BytesIO() as buffer:
-                    imageFile = res["image"]
-                    imageFile.save(buffer, format="JPEG")
-                    img = MIMEImage(buffer.getvalue())
-                    msg.attach(img)
-        except Exception as attach_ex:
-            print(f"Failed to attach image: {attach_ex}")
-
-        server.send_message(msg)
-        print("Email sent ok.")
-    except Exception as ex:
-        # Do not let email errors crash the app; log and continue
-        print(f"send_mail error: {ex!r}")
-    finally:
-        if server:
-            try:
-                server.quit()
-            except Exception:
-                pass
-
-
-def Display_Uploaded_Image(img_str:str):
+def Display_Uploaded_Image(img_str: str) -> None:
     buffer = BytesIO()
     img_data = b64decode(img_str)
     img = Image.open(BytesIO(img_data))
@@ -457,7 +380,7 @@ def Show_Audio_Player(ai_content: str) -> None:
         #st.session_state.gtts_placeholder.error(err)
         save_log("Error", str(ex), 0)
 
-def Login() -> str:
+def Login() -> tuple[str, bool, str]:
     with open('./config.yaml') as file:
         config = yaml.load(file, Loader=SafeLoader)
 
@@ -533,11 +456,11 @@ def Model_Changed() -> None:
 
     Delete_Files()
     
-def Show_Images(desc, images):
+def Show_Images(desc: str, images: list) -> None:
     for image in images:
         st.image(image, caption=desc)
 
-def Show_Messages(placeholder):
+def Show_Messages(placeholder) -> None:
 
     #print(f"Number of messages: {len(st.session_state.messages)}")
     #with placeholder:
@@ -581,7 +504,7 @@ def Show_Messages(placeholder):
             st.markdown(f"<div style='text-align: {alignment};'>{text}</div>", unsafe_allow_html=True)
 
 
-def Imagen_Creation(prompt, npics):
+def Imagen_Creation(prompt: str, npics: int) -> tuple[bool, list]:
     '''
     '''
     isOK = False
@@ -608,7 +531,7 @@ def Imagen_Creation(prompt, npics):
 
     return isOK, generated_images    
 
-def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature: float = 0.7):
+def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature: float = 0.7) -> tuple[dict, int]:
     '''
     '''    
     #print("DEBUG incoming contents:", contents)
@@ -710,22 +633,22 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
 
     return ret_content, tokens
 
-#@st.cache_data()
-def Create_Client():
-    '''
-    '''
-    client = genai.Client(api_key=st.secrets["api_key"])
-
-    return client
-
-@st.cache_resource()
+@st.cache_resource(show_spinner=False)
 def Main_Title(text: str) -> None:
     st.markdown(f'<h1 style="background-color:#ffffff;color:#049ca4;font-weight:bold;font-size:22px;border-radius:2%;">{text}</h1>', unsafe_allow_html=True)
+
+#@st.cache_data(show_spinner=False)
+def create_client() -> genai.Client:
+    '''
+    Create and return a Gemini API client.
+    '''
+    client = genai.Client(api_key=st.secrets["api_key"])
+    return client
 
 ##############################################
 ################ MAIN ########################
 ##############################################
-def main(argv):
+def main(argv: list) -> None:
 
     ## ----- Start --------
     #st.header(st.session_state.locale.title)
@@ -739,7 +662,7 @@ def main(argv):
         st.session_state.user_location = "unknown_location"
         print(f"Exception getting user ip/location: {ex}")
 
-    st.session_state.client = Create_Client()
+    st.session_state.client = create_client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt, 
                                                   options=("Gemini 2.5 flash", 
