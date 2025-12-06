@@ -666,10 +666,10 @@ def main(argv: list) -> None:
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt, 
                                                   options=("Gemini 2.5 flash", 
-                                                           "Gemini 2.5 Pro", 
                                                            "Gemini 3.0 Pro (最强大脑)",
-                                                           "Gemini 2.5 image",
-                                                           "Gemini 3 Pro image",
+                                                           "Gemini 3 Pro image (图像)",
+                                                           "Gemini 2.5 Pro", 
+                                                           "Gemini 2.5 image (图像)",
                                                            "Gemini 2.0 flash",
                                                            ), on_change=Model_Changed)
     if "2.0 flash" in st.session_state.model_version:
