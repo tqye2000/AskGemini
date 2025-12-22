@@ -9,6 +9,7 @@
 # 26/03/2025| Tian-Qing Ye   | Add 2.5 Pro
 # 19/11/2025| Tian-Qing Ye   | Add 3.0 Pro and image models support
 # 22/11/2025| Tian-Qing Ye   | Refactor and cleanup
+# 22/12/2025| Tian-Qing Ye   | Add 3 flash model
 ############################################################################
 
 # Standard library imports
@@ -572,9 +573,9 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
                     st.image(image)
                     ret_content["image"] = image
                     st.session_state["contents"].append(image)
-        elif "2.0 flash" in st.session_state.model_version:
+        elif "3 flash" in st.session_state.model_version:
             response = st.session_state.client.models.generate_content(
-                model = "models/gemini-2.0-flash-exp",
+                model = "models/gemini-3-flash-preview",
                 contents = contents,
                 config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'],
                                                          safety_settings=safety_settings,
@@ -665,25 +666,24 @@ def main(argv: list) -> None:
     st.session_state.client = create_client()
     
     st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt, 
-                                                  options=("Gemini 2.5 flash", 
+                                                  options=("Gemini 3 flash",
                                                            "Gemini 3.0 Pro (最强大脑)",
                                                            "Gemini 3 Pro image (图像)",
+                                                           "Gemini 2.5 flash", 
                                                            "Gemini 2.5 Pro", 
                                                            "Gemini 2.5 image (图像)",
-                                                           "Gemini 2.0 flash",
                                                            ), on_change=Model_Changed)
-    if "2.0 flash" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.0-flash"
-        st.session_state.enable_search = False
-        st.session_state.search_disabled = True
+    if "3 flash" in st.session_state.model_version:
+        st.session_state.llm = "gemini-3-flash-preview"
+        st.session_state.search_disabled = False
     elif "3.0 Pro" in st.session_state.model_version:
         st.session_state.llm = "gemini-3-pro-preview"
         st.session_state.search_disabled = False
-    elif "2.5 Pro" in st.session_state.model_version:
-        st.session_state.llm = "ggemini-2.5-pro"
-        st.session_state.search_disabled = False
     elif "2.5 flash" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.5-flash"
+        st.session_state.search_disabled = False
+    elif "2.5 Pro" in st.session_state.model_version:
+        st.session_state.llm = "ggemini-2.5-pro"
         st.session_state.search_disabled = False
     elif "2.5 image" in st.session_state.model_version:
         st.session_state.llm = "gemini-2.5-flash-image"
