@@ -10,6 +10,7 @@
 # 19/11/2025| Tian-Qing Ye   | Add 3.0 Pro and image models support
 # 22/11/2025| Tian-Qing Ye   | Refactor and cleanup
 # 22/12/2025| Tian-Qing Ye   | Add 3 flash model
+# 23/09/2026| OpenAI         | Add Gemini 3.1 models
 ############################################################################
 
 # Standard library imports
@@ -45,6 +46,21 @@ VALID_USERS = st.secrets["valid_users"].split(',')
 TEXT2IMG_ENABLES = st.secrets["txt2img_enabled"]
 TOTAL_TRIALS = int(st.secrets["total_trials"])
 MAX_MESSAGES = int(st.secrets["max_cached_messages"])
+
+DEFAULT_MODEL = "Gemini 3 Flash"
+MODEL_IDS = {
+    "Gemini 3.1 Pro (最强大脑)": "gemini-3.1-pro-preview",
+    "Gemini 3 Flash": "gemini-3-flash-preview",
+    "Gemini 3.1 Flash-Lite": "gemini-3.1-flash-lite-preview",
+    "Gemini 3.1 Flash Image (图像)": "gemini-3.1-flash-image-preview",
+    "Gemini 2.5 Flash": "gemini-2.5-flash",
+    "Gemini 2.5 Pro": "gemini-2.5-pro",
+    "Gemini 2.5 Flash Image (图像)": "gemini-2.5-flash-image",
+}
+IMAGE_MODELS = {
+    "Gemini 3.1 Flash Image (图像)",
+    "Gemini 2.5 Flash Image (图像)",
+}
 
 class Locale:    
     ai_role_options: List[str]
@@ -449,7 +465,7 @@ def Delete_Files() -> None:
     st.rerun()
 
 def Model_Changed() -> None:
-    if "2.0 flash" in st.session_state.model_version or "2.5 image" in st.session_state.model_version or "3 Pro image" in st.session_state.model_version:
+    if st.session_state.model_version in IMAGE_MODELS:
         st.session_state.enable_search = False
         st.session_state.search_disabled = True
     else:
@@ -551,7 +567,7 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
     tokens = 0
     ret_content = {}
     try:
-        if "2.5 image" in st.session_state.model_version or "3 Pro image" in st.session_state.model_version:
+        if st.session_state.model_version in IMAGE_MODELS:
             response = st.session_state.client.models.generate_content(
                 #model = "gemini-2.5-flash-image",
                 model = st.session_state.llm,
@@ -573,27 +589,6 @@ def Model_Completion(contents: list, sys_prompt: str = BASE_PROMPT, temperature:
                     st.image(image)
                     ret_content["image"] = image
                     st.session_state["contents"].append(image)
-        elif "3 flash" in st.session_state.model_version:
-            response = st.session_state.client.models.generate_content(
-                model = "models/gemini-3-flash-preview",
-                contents = contents,
-                config=genai.types.GenerateContentConfig(response_modalities=['Text', 'Image'],
-                                                         safety_settings=safety_settings,
-                                                         )
-                )
-
-            for part in response.candidates[0].content.parts:
-                if part.text is not None:
-                    print(part.text)
-                    ret_content["text"] = part.text
-                    #st.write(part.text)
-                    st.session_state["contents"].append(part.text)
-                elif part.inline_data is not None:
-                    image = Image.open(BytesIO(part.inline_data.data))
-                    #image.show()
-                    ret_content["image"] = image
-                    st.session_state["contents"].append(image)
-                    #st.image(image)
         else:
             if st.session_state.enable_search:
                 response = st.session_state.client.models.generate_content(
@@ -664,36 +659,20 @@ def main(argv: list) -> None:
         print(f"Exception getting user ip/location: {ex}")
 
     st.session_state.client = create_client()
-    
-    st.session_state.model_version = st.selectbox(label=st.session_state.locale.choose_llm_prompt, 
-                                                  options=("Gemini 3 flash",
-                                                           "Gemini 3.0 Pro (最强大脑)",
-                                                           "Gemini 3 Pro image (图像)",
-                                                           "Gemini 2.5 flash", 
-                                                           "Gemini 2.5 Pro", 
-                                                           "Gemini 2.5 image (图像)",
-                                                           ), on_change=Model_Changed)
-    if "3 flash" in st.session_state.model_version:
-        st.session_state.llm = "gemini-3-flash-preview"
-        st.session_state.search_disabled = False
-    elif "3.0 Pro" in st.session_state.model_version:
-        st.session_state.llm = "gemini-3-pro-preview"
-        st.session_state.search_disabled = False
-    elif "2.5 flash" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.5-flash"
-        st.session_state.search_disabled = False
-    elif "2.5 Pro" in st.session_state.model_version:
-        st.session_state.llm = "ggemini-2.5-pro"
-        st.session_state.search_disabled = False
-    elif "2.5 image" in st.session_state.model_version:
-        st.session_state.llm = "gemini-2.5-flash-image"
-        st.session_state.search_disabled = False
-    elif "3 Pro image" in st.session_state.model_version:
-        st.session_state.llm = "gemini-3-pro-image-preview"
-        st.session_state.search_disabled = False
-    else:
-        st.session_state.llm = "gemini-2.5-pro"
-        st.session_state.search_disabled = False
+
+    if st.session_state.model_version not in MODEL_IDS:
+        st.session_state.model_version = DEFAULT_MODEL
+
+    st.selectbox(
+        label=st.session_state.locale.choose_llm_prompt,
+        options=tuple(MODEL_IDS),
+        key="model_version",
+        on_change=Model_Changed,
+    )
+    st.session_state.llm = MODEL_IDS[st.session_state.model_version]
+    st.session_state.search_disabled = st.session_state.model_version in IMAGE_MODELS
+    if st.session_state.search_disabled:
+        st.session_state.enable_search = False
 
     st.sidebar.button(st.session_state.locale.chat_clear_btn, on_click=Clear_Chat)
     st.session_state.temperature = st.sidebar.slider(label=st.session_state.locale.temperature_label, min_value=0.1, max_value=2.0, value=0.7, step=0.05)
@@ -811,7 +790,7 @@ def main(argv: list) -> None:
                     #print(f"DEBUG0: {st.session_state.messages}\n")
 
                     with st.spinner('Wait ...'):
-                        if "2.0 flash" in st.session_state.model_version or "2.5 image" in st.session_state.model_version:
+                        if st.session_state.model_version in IMAGE_MODELS:
                             st.session_state.contents += parts
                             answer, tokens = Model_Completion(st.session_state.contents)
                         else:
@@ -828,10 +807,7 @@ def main(argv: list) -> None:
                         else:
                             generated_text = "No text generated!"
 
-                        if "2.0 flash" in st.session_state.model_version:
-                            st.session_state.messages += [{"role": "model", "parts": answer}]
-                        else:
-                            st.session_state.messages += [{"role": "model", "parts": [answer]}]
+                        st.session_state.messages += [{"role": "model", "parts": [answer]}]
 
                     #print(f"DEBUG2: {st.session_state.messages}")
 
@@ -886,7 +862,7 @@ if __name__ == "__main__":
         st.session_state.user_location = None
 
     if "model_version" not in st.session_state:
-        st.session_state.model_version = "Gemini 2.5 flash"
+        st.session_state.model_version = DEFAULT_MODEL
 
     if "temperature" not in st.session_state:
         st.session_state.temperature = 0.7
@@ -924,7 +900,6 @@ if __name__ == "__main__":
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # used by 2.0 flash exp model
     if "contents" not in st.session_state:
         st.session_state.contents = []
 
@@ -996,5 +971,3 @@ if __name__ == "__main__":
             st.session_state["context_input" + current_user + "value"] = ""
 
         main(sys.argv)
-
-
